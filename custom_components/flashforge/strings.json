@@ -2,15 +2,32 @@
   "config": {
     "flow_title": "Flashforge 3D Printer: {serial_number}",
     "step": {
+      "user": {
+        "title": "Add a FlashForge printer",
+        "description": "Choose how your printer connects.",
+        "menu_options": {
+          "legacy": "Legacy printer (Adventurer 3/4, Guider, Creator Pro …)",
+          "new_api": "Newer printer (Adventurer 5M / 5M Pro, AD5X, Creator series)"
+        }
+      },
       "confirm": {
         "description": "[%key:common::config_flow::description::confirm_setup%]"
       },
-      "user": {
+      "legacy": {
         "data": {
           "ip_addr": "[%key:common::config_flow::data::ip%]",
           "port": "[%key:common::config_flow::data::port%]"
         },
         "description": "Enter IP and port-number for your Flashforge 3d Printer. Leave empty to auto discover printer."
+      },
+      "new_api": {
+        "title": "Newer FlashForge printer (LAN mode)",
+        "description": "On the printer, enable Settings → Network → LAN Mode and note the 8-digit Check Code and serial number, then enter them below.",
+        "data": {
+          "ip_addr": "[%key:common::config_flow::data::ip%]",
+          "serial_number": "Serial number",
+          "check_code": "Check Code"
+        }
       },
       "auto_confirm": {
         "title": "Discovered Flashforge device.",
@@ -19,6 +36,7 @@
     },
     "abort": {
       "no_devices_found": "[%key:common::config_flow::abort::no_devices_found%]",
+      "already_configured": "[%key:common::config_flow::abort::already_configured%]",
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
     },
     "error": {

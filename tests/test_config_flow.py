@@ -1,6 +1,6 @@
 """Tests for the Flashforge config flow."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant import config_entries
@@ -9,9 +9,26 @@ from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.flashforge.const import CONF_SERIAL_NUMBER, DOMAIN
+from custom_components.flashforge.const import (
+    API_TYPE_NEW,
+    CONF_API_TYPE,
+    CONF_CHECK_CODE,
+    CONF_SERIAL_NUMBER,
+    DOMAIN,
+)
 
 from . import get_schema_default, get_schema_suggested, init_integration
+
+
+async def _legacy_form(hass: HomeAssistant) -> dict:
+    """Open the menu and advance to the legacy printer form."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+    )
+    assert result["type"] == FlowResultType.MENU
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "legacy"}
+    )
 
 
 @pytest.mark.asyncio
@@ -19,10 +36,9 @@ async def test_user_flow(
     enable_custom_integrations, hass: HomeAssistant, mock_printer_network: MagicMock
 ):
     """Test the manual user flow."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
-    )
+    result = await _legacy_form(hass)
     assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "legacy"
     assert not result["errors"]
     schema = result["data_schema"].schema
     assert get_schema_default(schema, CONF_PORT) == 8899
@@ -53,13 +69,9 @@ async def test_user_flow_auto_discover(
     mock_printer_discovery: MagicMock,
 ):
     """Test the auto discovery in manual user flow."""
-
     # User leaved empty form fields to trigger auto discover.
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={},
-    )
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     # Assert that we found mocked printer.
     assert result["type"] == FlowResultType.FORM
@@ -96,11 +108,8 @@ async def test_auto_discover_no_devices(
     mock_printer_discovery.return_value = []
 
     # User leaved empty form fields to trigger auto discover.
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={},
-    )
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     # Assert that no devices discovered.
     assert result["reason"] == "no_devices_found"
@@ -118,11 +127,8 @@ async def test_auto_discover_device_error(
     mock_printer_network.connect.side_effect = TimeoutError("timeout")
 
     # User leaved empty form fields to trigger auto discover.
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={},
-    )
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     # Assert that no devices discovered.
     assert result["reason"] == "no_devices_found"
@@ -136,10 +142,10 @@ async def test_connection_timeout(
     """Test what happens if there is a connection timeout."""
     mock_printer_network.connect.side_effect = TimeoutError("timeout")
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
             CONF_IP_ADDRESS: "127.0.0.1",
             CONF_PORT: 8899,
         },
@@ -158,10 +164,10 @@ async def test_connection_error(
     """Test what happens if there is a connection Error."""
     mock_printer_network.connect.side_effect = ConnectionError("conn_error")
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
             CONF_IP_ADDRESS: "127.0.0.1",
             CONF_PORT: 8899,
         },
@@ -177,16 +183,79 @@ async def test_user_device_exists_abort(
     """Test if device is already configured."""
     await init_integration(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={CONF_SOURCE: config_entries.SOURCE_USER},
-        data={
+    result = await _legacy_form(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
             CONF_IP_ADDRESS: "127.0.0.1",
             CONF_PORT: 8899,
         },
     )
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "already_configured"
+
+
+@pytest.mark.asyncio
+async def test_new_api_flow(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+    mock_new_api_printer: MagicMock,
+):
+    """Test adding a newer printer through the HTTP API flow."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+    )
+    assert result["type"] == FlowResultType.MENU
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "new_api"}
+    )
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "new_api"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_IP_ADDRESS: "192.168.1.20",
+            CONF_SERIAL_NUMBER: "SNCR5123",
+            CONF_CHECK_CODE: "12345678",
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Creator5"
+    assert result["data"][CONF_API_TYPE] == API_TYPE_NEW
+    assert result["data"][CONF_CHECK_CODE] == "12345678"
+    assert result["data"][CONF_SERIAL_NUMBER] == "SNCR5123"
+    assert result["data"][CONF_IP_ADDRESS] == "192.168.1.20"
+
+
+@pytest.mark.asyncio
+async def test_new_api_flow_cannot_connect(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+):
+    """Test the new-API flow when the printer can't be reached."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "new_api"}
+    )
+
+    with patch(
+        "custom_components.flashforge.config_flow.NewApiPrinter"
+    ) as mock_printer_cls:
+        mock_printer_cls.return_value.connect.side_effect = ConnectionError("nope")
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_IP_ADDRESS: "192.168.1.20",
+                CONF_SERIAL_NUMBER: "SNCR5123",
+                CONF_CHECK_CODE: "12345678",
+            },
+        )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
 
 
 @pytest.mark.asyncio

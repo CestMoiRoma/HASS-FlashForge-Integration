@@ -11,8 +11,19 @@ from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CONF_SERIAL_NUMBER, DOMAIN
+from .const import (
+    API_TYPE_LEGACY,
+    API_TYPE_NEW,
+    CONF_API_TYPE,
+    CONF_CHECK_CODE,
+    CONF_SERIAL_NUMBER,
+    DOMAIN,
+    LEGACY_PORT,
+    NEW_API_PORT,
+)
+from .new_api import NewApiPrinter
 
 
 class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -27,11 +38,20 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     printer: Printer
 
     async def async_step_user(
+        self, _: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user choose which kind of printer to add."""
+        return self.async_show_menu(
+            step_id="user",
+            menu_options=["legacy", "new_api"],
+        )
+
+    async def async_step_legacy(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Run when user trying to add component."""
+        """Add a legacy printer over the M-code protocol (port 8899)."""
         errors = {}
-        self.port = 8899
+        self.port = LEGACY_PORT
         self.ip_addr = None
 
         if user_input is not None:
@@ -52,10 +72,60 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self._async_show_form(errors=errors)
 
+    async def async_step_new_api(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """
+        Add a newer printer over the HTTP API (port 8898 + Check Code).
+
+        Covers the Adventurer 5M / 5M Pro, AD5X and Creator series, which
+        require LAN mode and an 8-digit Check Code from the printer screen.
+        """
+        errors = {}
+
+        if user_input is not None:
+            ip_addr = user_input[CONF_IP_ADDRESS]
+            serial = user_input[CONF_SERIAL_NUMBER]
+            check_code = user_input[CONF_CHECK_CODE]
+            printer = NewApiPrinter(
+                ip_addr, serial, check_code, async_get_clientsession(self.hass)
+            )
+            try:
+                await printer.connect()
+            except (TimeoutError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                await self.async_set_unique_id(serial)
+                self._abort_if_unique_id_configured()
+                title = printer.machine_name or serial
+                return self.async_create_entry(
+                    title=title,
+                    data={
+                        CONF_API_TYPE: API_TYPE_NEW,
+                        CONF_IP_ADDRESS: ip_addr,
+                        CONF_PORT: NEW_API_PORT,
+                        CONF_SERIAL_NUMBER: serial,
+                        CONF_CHECK_CODE: check_code,
+                    },
+                )
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_IP_ADDRESS): str,
+                vol.Required(CONF_SERIAL_NUMBER): str,
+                vol.Required(CONF_CHECK_CODE): str,
+            }
+        )
+        return self.async_show_form(
+            step_id="new_api",
+            data_schema=data_schema,
+            errors=errors,
+        )
+
     async def async_step_auto(self) -> ConfigFlowResult:
         """Try to discover ip of printer and return a confirm form."""
         ip = None
-        port = 8899
+        port = LEGACY_PORT
         local_ip = await async_get_source_ip(self.hass)
         discovered_printers = await Discovery.getPrinters(
             self.hass.loop,
@@ -110,7 +180,7 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(
-            step_id="user",
+            step_id="legacy",
             data_schema=data_schema,
             errors=errors or {},
         )
@@ -137,6 +207,7 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=title,
             data={
+                CONF_API_TYPE: API_TYPE_LEGACY,
                 CONF_IP_ADDRESS: self.ip_addr,
                 CONF_PORT: self.port,
                 CONF_SERIAL_NUMBER: self.printer.serial,

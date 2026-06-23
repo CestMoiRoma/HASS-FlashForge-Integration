@@ -1,10 +1,11 @@
 """Fixtures for Flashforge integration tests."""
 
 from itertools import cycle
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from ffpp.Printer import ToolHandler, temperatures
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -40,6 +41,45 @@ def mock_printer_network() -> MagicMock:
         )
 
         yield network
+
+
+@pytest.fixture
+def mock_new_api_printer() -> MagicMock:
+    """Patch NewApiPrinter so the new-API flow and setup work without hardware."""
+    printer = MagicMock()
+    printer.connect = AsyncMock(return_value=True)
+    printer.update = AsyncMock()
+    printer.setLed = AsyncMock()
+    printer.connected = True
+    printer.machine_name = "Creator5"
+    printer.machine_type = "AD5X"
+    printer.serial = "SNCR5123"
+    printer.firmware = "v3.1.3"
+    printer.mac_address = None
+    printer.machine_status = "READY"
+    printer.led = False
+
+    bed = ToolHandler()
+    bed.add(temperatures("bed", 25, 0))
+    extruder = ToolHandler()
+    extruder.add(temperatures("right", 25, 0))
+    printer.bed_tools = bed
+    printer.extruder_tools = extruder
+
+    printer.network = MagicMock()
+    printer.network.getCameraStream = AsyncMock(
+        return_value="http://127.0.0.1:8080/?action=stream"
+    )
+    printer.network.sendGetFileNames = AsyncMock(return_value=[])
+
+    with (
+        patch(
+            "custom_components.flashforge.config_flow.NewApiPrinter",
+            return_value=printer,
+        ),
+        patch("custom_components.flashforge.NewApiPrinter", return_value=printer),
+    ):
+        yield printer
 
 
 @pytest.fixture

@@ -14,9 +14,18 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .const import (
+    API_TYPE_LEGACY,
+    API_TYPE_NEW,
+    CONF_API_TYPE,
+    CONF_CHECK_CODE,
+    CONF_SERIAL_NUMBER,
+    DOMAIN,
+)
 from .data_update_coordinator import FlashForgeDataUpdateCoordinator
+from .new_api import NewApiPrinter
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -34,8 +43,17 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  # noqa: PLR0915
     """Set up Flashforge from a config entry."""
-    printer = Printer(entry.data[CONF_IP_ADDRESS], port=entry.data[CONF_PORT])
-    _LOGGER.debug("FlashForge printer setup")
+    api_type = entry.data.get(CONF_API_TYPE, API_TYPE_LEGACY)
+    if api_type == API_TYPE_NEW:
+        printer = NewApiPrinter(
+            entry.data[CONF_IP_ADDRESS],
+            entry.data[CONF_SERIAL_NUMBER],
+            entry.data[CONF_CHECK_CODE],
+            async_get_clientsession(hass),
+        )
+    else:
+        printer = Printer(entry.data[CONF_IP_ADDRESS], port=entry.data[CONF_PORT])
+    _LOGGER.debug("FlashForge printer setup (%s)", api_type)
     coordinator = FlashForgeDataUpdateCoordinator(hass, printer, entry)
     try:
         await coordinator.async_config_entry_first_refresh()

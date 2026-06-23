@@ -2,21 +2,39 @@
     "config": {
         "flow_title": "Flashforge 3D Printer: {serial_number}",
         "abort": {
-            "no_devices_found": "No devices found on the network"
+            "no_devices_found": "No devices found on the network",
+            "already_configured": "This printer is already configured"
         },
         "error": {
-            "cannot_connect": "Can not connect, are you sure you entered correct ip?"
+            "cannot_connect": "Can not connect, are you sure you entered the correct IP, serial number and Check Code?"
         },
         "step": {
+            "user": {
+                "title": "Add a FlashForge printer",
+                "description": "Choose how your printer connects.",
+                "menu_options": {
+                    "legacy": "Legacy printer (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Newer printer (Adventurer 5M / 5M Pro, AD5X, Creator series)"
+                }
+            },
             "confirm": {
                 "description": "Do you want to start set up?"
             },
-            "user": {
+            "legacy": {
                 "data": {
                     "ip_addr": "Ip of your 3D printer.",
                     "port": "port"
                 },
                 "description": "Enter IP and port-number for your Flashforge 3d Printer. Leave empty to auto discover printer."
+            },
+            "new_api": {
+                "title": "Newer FlashForge printer (LAN mode)",
+                "description": "On the printer, enable Settings → Network → LAN Mode and note the 8-digit Check Code and serial number, then enter them below.",
+                "data": {
+                    "ip_addr": "Ip of your 3D printer.",
+                    "serial_number": "Serial number",
+                    "check_code": "Check Code"
+                }
             },
             "auto_confirm": {
                 "title": "Discovered Flashforge device.",

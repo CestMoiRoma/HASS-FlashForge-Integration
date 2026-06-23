@@ -10,6 +10,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DEFAULT_NAME, DOMAIN, MAX_FAILED_UPDATES, SCAN_INTERVAL
+from .new_api import NewApiPrinter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,7 +21,10 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
     config_entry: ConfigEntry
 
     def __init__(
-        self, hass: HomeAssistant, printer: Printer, config_entry: ConfigEntry
+        self,
+        hass: HomeAssistant,
+        printer: Printer | NewApiPrinter,
+        config_entry: ConfigEntry,
     ) -> None:
         """Initialize."""
         super().__init__(
@@ -32,30 +36,31 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
         )
         self.config_entry = config_entry
         self.printer = printer
-        self._printer_offline = False
         self.data = {
             "status": None,
         }
-        self.failedupdates = 0
 
     async def async_update_data(self) -> dict[str, list[str] | str | None]:
-        """Update data via API."""
-        try:
-            await self.printer.update()
-            files = await self.printer.network.sendGetFileNames()
-        except (TimeoutError, ConnectionError) as err:
-            self.failedupdates += 1
-            if self.failedupdates >= MAX_FAILED_UPDATES:
-                self.failedupdates = 0
-                raise UpdateFailed(err) from err
-            return await self.async_update_data()
+        """
+        Update data via API.
 
-        if not files:
-            files = []
-        files = [f.removeprefix("/data/") for f in files]
-        self.failedupdates = 0
+        Retry the request up to ``MAX_FAILED_UPDATES`` times on connection
+        errors before giving up, so a single dropped packet does not mark the
+        printer as unavailable.
+        """
+        last_err: Exception | None = None
+        for _ in range(MAX_FAILED_UPDATES):
+            try:
+                await self.printer.update()
+                files = await self.printer.network.sendGetFileNames()
+            except (TimeoutError, ConnectionError) as err:
+                last_err = err
+                continue
 
-        return {"status": self.printer.machine_status, "files": files}
+            files = [f.removeprefix("/data/") for f in files] if files else []
+            return {"status": self.printer.machine_status, "files": files}
+
+        raise UpdateFailed(last_err)
 
     async def async_config_entry_first_refresh(self) -> None:
         """Connect to printer and update with machine info."""

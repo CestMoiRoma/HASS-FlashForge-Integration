@@ -38,10 +38,13 @@ class FlashForgeSelect(CoordinatorEntity, SelectEntity):
     _attr_should_poll = False
 
     def __init__(
-        self, coordinator: FlashForgeDataUpdateCoordinator, options: list = []
+        self,
+        coordinator: FlashForgeDataUpdateCoordinator,
+        options: list[str] | None = None,
     ) -> None:
         """Initialize the Demo select entity."""
         super().__init__(coordinator)
+        options = options or []
         self._attr_unique_id = f"{coordinator.config_entry.unique_id}_select"
         self._attr_current_option = options[0] if options else None
         self._attr_icon = "mdi:file-cad"
@@ -62,12 +65,3 @@ class FlashForgeSelect(CoordinatorEntity, SelectEntity):
         """Update the current selected option."""
         self._attr_current_option = option
         self.async_write_ha_state()
-
-    # async def async_update(self) -> None:
-    #     """Get the latest data."""
-    #     _LOGGER.debug("async_update")
-    #     files = await self._coordinator.printer.network.sendGetFileNames()
-    #     for n, value in enumerate(files):
-    #         files[n] = value.removeprefix("/data/")
-    #     _LOGGER.debug(f"list of files: {files}")
-    #     self._attr_options = files
