@@ -15,7 +15,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DEFAULT_NAME, DOMAIN
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -172,14 +172,14 @@ class FlashForgeSensor(CoordinatorEntity, SensorEntity):
         self._device_id = coordinator.config_entry.unique_id
         self._attr_device_info = coordinator.device_info
         self.entity_description = description
+        # Fall back to a sensible prefix so entity ids never become "none_..."
+        # when the printer reports no name/serial (see issue #108).
+        title = coordinator.config_entry.title or DEFAULT_NAME
+        unique_prefix = coordinator.config_entry.unique_id or DEFAULT_NAME
         self._attr_name = (
-            f"{coordinator.config_entry.title}"
-            f" {name.title()}"
-            f"{description.key.replace('_', ' ').title()}"
+            f"{title} {name.title()}{description.key.replace('_', ' ').title()}"
         )
-        self._attr_unique_id = (
-            f"{coordinator.config_entry.unique_id}_{name}{description.key}"
-        )
+        self._attr_unique_id = f"{unique_prefix}_{name}{description.key}"
 
         self.tool_name = tool_name
 

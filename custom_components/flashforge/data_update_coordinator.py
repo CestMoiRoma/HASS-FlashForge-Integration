@@ -74,7 +74,7 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
         """Device info."""
         unique_id = self.config_entry.unique_id or ""
         model = self.printer.machine_type
-        name = self.printer.machine_name or self.config_entry.title
+        name = self.printer.machine_name or self.config_entry.title or DEFAULT_NAME
         firmware = self.printer.firmware
         sn = self.printer.serial
         mac = self.printer.mac_address

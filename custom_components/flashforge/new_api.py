@@ -18,6 +18,7 @@ documentation (https://github.com/Parallel-7/flashforge-api-docs).
 
 from __future__ import annotations
 
+import base64
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -37,12 +38,21 @@ _HTTP_OK = 200
 # Endpoints on the port-8898 HTTP API.
 _ENDPOINT_DETAIL = "/detail"
 _ENDPOINT_CONTROL = "/control"
+_ENDPOINT_PRODUCT = "/product"
 _ENDPOINT_GCODE_LIST = "/gcodeList"
 _ENDPOINT_GCODE_PRINT = "/printGcode"
+_ENDPOINT_GCODE_THUMB = "/gcodeThumb"
 
 # ``payload.cmd`` values used by the ``/control`` endpoint.
 _CMD_JOB_CONTROL = "jobCtl_cmd"
 _CMD_LIGHT_CONTROL = "lightControl_cmd"
+_CMD_CIRCULATE_CONTROL = "circulateCtl_cmd"
+
+# Filtration / exhaust-fan modes exposed to the select entity (see issue #90).
+FILTRATION_OFF = "off"
+FILTRATION_INTERNAL = "internal"
+FILTRATION_EXTERNAL = "external"
+FILTRATION_MODES = (FILTRATION_OFF, FILTRATION_INTERNAL, FILTRATION_EXTERNAL)
 
 # Map the raw lower-case status reported by the new API to the legacy upper-case
 # ``MachineStatus`` names, so existing consumers keep working unchanged (for
@@ -188,6 +198,31 @@ class NewApiNetwork:
             self._camera_stream_url or f"http://{self.ip}:{CAMERA_PORT}/?action=stream"
         )
 
+    async def getProduct(self) -> dict[str, Any]:  # noqa: N802 - mirror ffpp API
+        """Return the ``product`` object describing the printer's capabilities."""
+        data = await self._post(_ENDPOINT_PRODUCT)
+        return data.get("product", {})
+
+    async def setFiltration(  # noqa: N802 - mirror ffpp API
+        self, *, internal: bool, external: bool
+    ) -> bool:
+        """Set the internal/external filtration (exhaust fan) state."""
+        return await self._send_control(
+            _CMD_CIRCULATE_CONTROL,
+            {
+                "internal": "open" if internal else "close",
+                "external": "open" if external else "close",
+            },
+        )
+
+    async def getThumbnail(self, file_name: str) -> bytes | None:  # noqa: N802
+        """Return the PNG thumbnail for ``file_name`` as raw bytes, if any."""
+        data = await self._post(_ENDPOINT_GCODE_THUMB, {"fileName": file_name})
+        image_data = data.get("imageData")
+        if not image_data:
+            return None
+        return base64.b64decode(image_data)
+
 
 class NewApiPrinter:
     """
@@ -220,6 +255,10 @@ class NewApiPrinter:
         self._print_percent: int | None = None
         self._print_layer: int | None = None
         self._job_layers: int | None = None
+        self._internal_fan = False
+        self._external_fan = False
+        # Capability flags, populated from /product on connect.
+        self.filtration_control = False
 
     @property
     def machine_type(self) -> str | None:
@@ -286,9 +325,25 @@ class NewApiPrinter:
         """Total number of layers in the current job."""
         return self._job_layers
 
+    @property
+    def filtration_mode(self) -> str:
+        """Current filtration mode (``off`` / ``internal`` / ``external``)."""
+        if self._external_fan:
+            return FILTRATION_EXTERNAL
+        if self._internal_fan:
+            return FILTRATION_INTERNAL
+        return FILTRATION_OFF
+
     async def connect(self) -> bool:
         """Perform an initial fetch and mark the printer connected."""
         await self.update()
+        try:
+            product = await self.network.getProduct()
+        except (TimeoutError, ConnectionError):
+            product = {}
+        self.filtration_control = bool(
+            product.get("externalFanCtrlState") or product.get("internalFanCtrlState")
+        )
         self.connected = ConnectionStatus.CONNECTED
         return True
 
@@ -301,6 +356,20 @@ class NewApiPrinter:
         """Set the chamber LED state and update the cached value."""
         await self.network.sendSetLedState(state)
         self._led = state
+
+    async def set_filtration(self, mode: str) -> None:
+        """Set the filtration mode (``off`` / ``internal`` / ``external``)."""
+        internal = mode == FILTRATION_INTERNAL
+        external = mode == FILTRATION_EXTERNAL
+        await self.network.setFiltration(internal=internal, external=external)
+        self._internal_fan = internal
+        self._external_fan = external
+
+    async def get_thumbnail(self) -> bytes | None:
+        """Return the thumbnail bytes for the current print file, if any."""
+        if not self._job_file:
+            return None
+        return await self.network.getThumbnail(self._job_file)
 
     def _apply_detail(self, detail: dict[str, Any]) -> None:
         """Map a ``/detail`` response onto the ffpp-compatible properties."""
@@ -317,6 +386,8 @@ class NewApiPrinter:
         self._mac_address = detail.get("macAddr")
         self._machine_type = MODEL_BY_PID.get(detail.get("pid"), "FlashForge (LAN)")
         self._led = (detail.get("lightStatus") or "").lower() == "open"
+        self._internal_fan = (detail.get("internalFanStatus") or "").lower() == "open"
+        self._external_fan = (detail.get("externalFanStatus") or "").lower() == "open"
         self._job_file = detail.get("printFileName") or None
 
         progress = detail.get("printProgress")

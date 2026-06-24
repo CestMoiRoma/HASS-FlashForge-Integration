@@ -96,3 +96,39 @@ async def test_ready_status_maps_to_legacy_name() -> None:
     assert printer.machine_status == "READY"
     assert printer.move_mode == "READY"
     assert printer.led is False
+
+
+async def test_filtration_mode_mapping() -> None:
+    """The filtration mode reflects the reported fan status (issue #90)."""
+    printer = _printer()
+
+    async def _external() -> dict:
+        return {"status": "printing", "externalFanStatus": "open"}
+
+    printer.network.getDetail = _external
+    await printer.update()
+    assert printer.filtration_mode == "external"
+
+    async def _off() -> dict:
+        return {"status": "ready"}
+
+    printer.network.getDetail = _off
+    await printer.update()
+    assert printer.filtration_mode == "off"
+
+
+async def test_set_filtration_payload() -> None:
+    """Selecting a filtration mode sends the expected control payload."""
+    printer = _printer()
+    sent: dict = {}
+
+    async def _capture(cmd: str, args: dict) -> bool:
+        sent.update(cmd=cmd, args=args)
+        return True
+
+    printer.network._send_control = _capture  # noqa: SLF001
+    await printer.set_filtration("internal")
+
+    assert sent["cmd"] == "circulateCtl_cmd"
+    assert sent["args"] == {"internal": "open", "external": "close"}
+    assert printer.filtration_mode == "internal"
