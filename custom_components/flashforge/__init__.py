@@ -67,8 +67,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     except NewApiAuthError as err:
         raise ConfigEntryAuthFailed(err) from err
     except (TimeoutError, ConnectionError) as err:
-        _LOGGER.debug("Printer not responding: %s", err)
-        raise ConfigEntryNotReady(err) from err
+        ip = entry.data[CONF_IP_ADDRESS]
+        _LOGGER.debug("Printer at %s not responding: %s", ip, err)
+        msg = f"FlashForge printer at {ip} is offline (unreachable on the network)"
+        raise ConfigEntryNotReady(msg) from err
     # Save the coordinator object to be able to access it later on.
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
