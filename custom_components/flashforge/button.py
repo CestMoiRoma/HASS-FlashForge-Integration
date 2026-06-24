@@ -10,6 +10,7 @@ from homeassistant.const import Platform
 from homeassistant.helpers import entity_registry
 
 from . import DOMAIN
+from .new_api import NewApiPrinter
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -34,38 +35,50 @@ async def async_setup_entry(
     ]
 
     printer_network = coordinator.printer.network
-    async_add_entities(
-        [
+    buttons = [
+        PrinterButton(
+            name="abort",
+            icon="mdi:stop",
+            coordinator=coordinator,
+            hass=hass,
+            action=printer_network.sendAbortRequest,
+        ),
+        PrinterButton(
+            name="continue",
+            icon="mdi:play",
+            hass=hass,
+            coordinator=coordinator,
+            action=printer_network.sendContinueRequest,
+        ),
+        PrinterButton(
+            name="pause",
+            icon="mdi:pause",
+            hass=hass,
+            coordinator=coordinator,
+            action=printer_network.sendPauseRequest,
+        ),
+        FilePrinterButton(
+            name="print_file",
+            icon="mdi:printer-3d-nozzle",
+            hass=hass,
+            coordinator=coordinator,
+            action=printer_network.sendPrintRequest,
+        ),
+    ]
+
+    # Clearing the build platform is only available on the newer HTTP API.
+    if isinstance(coordinator.printer, NewApiPrinter):
+        buttons.append(
             PrinterButton(
-                name="abort",
-                icon="mdi:stop",
-                coordinator=coordinator,
-                hass=hass,
-                action=printer_network.sendAbortRequest,
-            ),
-            PrinterButton(
-                name="continue",
-                icon="mdi:play",
+                name="clear_platform",
+                icon="mdi:broom",
                 hass=hass,
                 coordinator=coordinator,
-                action=printer_network.sendContinueRequest,
-            ),
-            PrinterButton(
-                name="pause",
-                icon="mdi:pause",
-                hass=hass,
-                coordinator=coordinator,
-                action=printer_network.sendPauseRequest,
-            ),
-            FilePrinterButton(
-                name="print_file",
-                icon="mdi:printer-3d-nozzle",
-                hass=hass,
-                coordinator=coordinator,
-                action=printer_network.sendPrintRequest,
-            ),
-        ]
-    )
+                action=printer_network.sendClearPlatform,
+            )
+        )
+
+    async_add_entities(buttons)
 
 
 class PrinterButton(ButtonEntity):

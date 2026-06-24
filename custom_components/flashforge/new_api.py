@@ -23,6 +23,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
+from ffpp.Network import Network
 from ffpp.Printer import ConnectionStatus, ToolHandler, temperatures
 
 if TYPE_CHECKING:
@@ -31,6 +32,9 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 API_PORT = 8898
+# Control commands (e.g. setting temperatures) still use the M-code service on
+# the legacy TCP port, which newer printers keep open for control.
+LEGACY_TCP_PORT = 8899
 CAMERA_PORT = 8080
 REQUEST_TIMEOUT = 10
 _HTTP_OK = 200
@@ -47,6 +51,7 @@ _ENDPOINT_GCODE_THUMB = "/gcodeThumb"
 _CMD_JOB_CONTROL = "jobCtl_cmd"
 _CMD_LIGHT_CONTROL = "lightControl_cmd"
 _CMD_CIRCULATE_CONTROL = "circulateCtl_cmd"
+_CMD_STATE_CONTROL = "stateCtrl_cmd"
 
 # Filtration / exhaust-fan modes exposed to the select entity (see issue #90).
 FILTRATION_OFF = "off"
@@ -223,6 +228,12 @@ class NewApiNetwork:
             return None
         return base64.b64decode(image_data)
 
+    async def sendClearPlatform(self) -> bool:  # noqa: N802 - mirror ffpp API
+        """Tell the printer the build platform has been cleared."""
+        return await self._send_control(
+            _CMD_STATE_CONTROL, {"action": "setClearPlatform"}
+        )
+
 
 class NewApiPrinter:
     """
@@ -240,6 +251,9 @@ class NewApiPrinter:
         self.connected: ConnectionStatus = ConnectionStatus.DISCONNECTED
         self.network = NewApiNetwork(ip, serial, check_code, session)
         self._serial = serial
+        self._ip = ip
+        # Lazily created M-code transport for control commands (port 8899).
+        self._tcp: Network | None = None
         self.extruder_tools = ToolHandler()
         self.bed_tools = ToolHandler()
 
@@ -464,6 +478,27 @@ class NewApiPrinter:
         if not self._job_file:
             return None
         return await self.network.getThumbnail(self._job_file)
+
+    async def _send_gcode(self, command: str) -> None:
+        """
+        Send a single M-code over TCP, wrapped in control acquire/release.
+
+        Newer printers require control to be claimed (``~M601 S1``) before they
+        accept commands and released again afterwards (``~M602``).
+        """
+        if self._tcp is None:
+            self._tcp = Network(self._ip, LEGACY_TCP_PORT)
+        await self._tcp.sendMessage(
+            ["~M601 S1\r\n", f"{command}\r\n", "~M602\r\n"],
+        )
+
+    async def set_extruder_temp(self, temperature: float) -> None:
+        """Set the target extruder temperature (0 turns the heater off)."""
+        await self._send_gcode(f"~M104 S{int(temperature)}")
+
+    async def set_bed_temp(self, temperature: float) -> None:
+        """Set the target bed temperature (0 turns the heater off)."""
+        await self._send_gcode(f"~M140 S{int(temperature)}")
 
     def _apply_detail(self, detail: dict[str, Any]) -> None:
         """Map a ``/detail`` response onto the ffpp-compatible properties."""
