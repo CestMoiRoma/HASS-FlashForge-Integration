@@ -1,23 +1,79 @@
 name: "Release"
 
+# Manually-triggered release: bumps the manifest version, tags the code, and
+# publishes a GitHub release whose notes are the commit titles since the last
+# release. Run it from the Actions tab and enter the new version.
+
 on:
-  release:
-    types:
-      - "published"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version, e.g. 0.4.0 (no leading v)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   release:
     name: "Release"
     runs-on: "ubuntu-latest"
+    # Extra guard: only the repository owner may publish a release, even if
+    # other collaborators have write access.
+    if: github.triggering_actor == github.repository_owner
     steps:
       - name: "Checkout the repository"
-        uses: "actions/checkout@v4"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0  # full history + tags, needed for the changelog
 
-      - name: "Adjust version number"
+      - name: "Validate the version"
         shell: "bash"
         run: |
-          yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must look like X.Y.Z (e.g. 0.4.0)"
+            exit 1
+          fi
+          if git rev-parse "${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "Tag ${{ inputs.version }} already exists"
+            exit 1
+          fi
+
+      - name: "Build the changelog from commits since the last release"
+        id: changelog
+        shell: "bash"
+        run: |
+          last_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -z "$last_tag" ]; then
+            range=""
+            echo "No previous tag; using full history."
+          else
+            range="${last_tag}..HEAD"
+            echo "Changelog range: ${range}"
+          fi
+          {
+            echo "notes<<CHANGELOG_EOF"
+            git log $range --no-merges --pretty=format:'- %s'
+            echo ""
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Bump the manifest version"
+        shell: "bash"
+        run: |
+          yq -i -o json '.version="${{ inputs.version }}"' \
             "${{ github.workspace }}/custom_components/flashforge/manifest.json"
+
+      - name: "Commit and tag"
+        shell: "bash"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add custom_components/flashforge/manifest.json
+          git commit -m "Release ${{ inputs.version }}"
+          git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
+          git push origin HEAD --follow-tags
 
       - name: "ZIP the integration directory"
         shell: "bash"
@@ -25,7 +81,10 @@ jobs:
           cd "${{ github.workspace }}/custom_components/flashforge"
           zip FlashForge.zip -r ./
 
-      - name: "Upload the ZIP file to the release"
+      - name: "Publish the GitHub release"
         uses: softprops/action-gh-release@v2.2.1
         with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          body: ${{ steps.changelog.outputs.notes }}
           files: ${{ github.workspace }}/custom_components/flashforge/FlashForge.zip
