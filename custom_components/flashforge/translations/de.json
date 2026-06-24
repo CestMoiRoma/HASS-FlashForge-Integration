@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Flashforge 3D-Drucker: {serial_number}",
+        "abort": {
+            "no_devices_found": "Keine Geräte im Netzwerk gefunden",
+            "already_configured": "Dieser Drucker ist bereits konfiguriert",
+            "reconfigure_successful": "Die Neukonfiguration war erfolgreich",
+            "wrong_printer": "Die Seriennummer stimmt nicht mit dem neu zu konfigurierenden Drucker überein."
+        },
+        "error": {
+            "cannot_connect": "Verbindung nicht möglich. Haben Sie die richtige IP-Adresse, Seriennummer und den richtigen Prüfcode eingegeben?"
+        },
+        "step": {
+            "user": {
+                "title": "FlashForge-Drucker hinzufügen",
+                "description": "Wählen Sie, wie Ihr Drucker verbunden wird.",
+                "menu_options": {
+                    "legacy": "Älterer Drucker (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Neuerer Drucker (Adventurer 5M / 5M Pro, AD5X, Creator-Serie)"
+                }
+            },
+            "confirm": {
+                "description": "Möchten Sie die Einrichtung starten?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP-Adresse Ihres 3D-Druckers.",
+                    "port": "Port"
+                },
+                "description": "Geben Sie die IP-Adresse und die Portnummer Ihres Flashforge 3D-Druckers ein. Leer lassen, um den Drucker automatisch zu erkennen."
+            },
+            "new_api": {
+                "title": "Neuerer FlashForge-Drucker (LAN-Modus)",
+                "description": "Aktivieren Sie am Drucker Einstellungen → Netzwerk → LAN-Modus und notieren Sie den 8-stelligen Prüfcode und die Seriennummer, und geben Sie sie unten ein.",
+                "data": {
+                    "ip_addr": "IP-Adresse Ihres 3D-Druckers.",
+                    "serial_number": "Seriennummer",
+                    "check_code": "Prüfcode"
+                }
+            },
+            "reconfigure": {
+                "title": "FlashForge-Drucker neu konfigurieren",
+                "description": "Aktualisieren Sie die Verbindungsdaten Ihres Druckers.",
+                "data": {
+                    "ip_addr": "IP-Adresse Ihres 3D-Druckers.",
+                    "port": "Port",
+                    "serial_number": "Seriennummer",
+                    "check_code": "Prüfcode"
+                }
+            },
+            "auto_confirm": {
+                "title": "Flashforge-Gerät erkannt.",
+                "description": "Drucker {machine_name} unter {ip_addr} gefunden. Möchten Sie diesen Drucker zu Home Assistant hinzufügen?"
+            }
+        }
+    }
+}

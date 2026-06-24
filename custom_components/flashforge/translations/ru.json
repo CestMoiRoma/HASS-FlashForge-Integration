@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "3D-принтер Flashforge: {serial_number}",
+        "abort": {
+            "no_devices_found": "Устройства в сети не найдены",
+            "already_configured": "Этот принтер уже настроен",
+            "reconfigure_successful": "Перенастройка выполнена успешно",
+            "wrong_printer": "Серийный номер не совпадает с перенастраиваемым принтером."
+        },
+        "error": {
+            "cannot_connect": "Не удалось подключиться. Вы уверены, что ввели правильные IP-адрес, серийный номер и проверочный код?"
+        },
+        "step": {
+            "user": {
+                "title": "Добавить принтер FlashForge",
+                "description": "Выберите способ подключения принтера.",
+                "menu_options": {
+                    "legacy": "Старый принтер (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Новый принтер (Adventurer 5M / 5M Pro, AD5X, серия Creator)"
+                }
+            },
+            "confirm": {
+                "description": "Начать настройку?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP-адрес вашего 3D-принтера.",
+                    "port": "порт"
+                },
+                "description": "Введите IP-адрес и номер порта вашего 3D-принтера Flashforge. Оставьте пустым для автоматического поиска принтера."
+            },
+            "new_api": {
+                "title": "Новый принтер FlashForge (режим LAN)",
+                "description": "На принтере включите Настройки → Сеть → Режим LAN и запишите 8-значный проверочный код и серийный номер, затем введите их ниже.",
+                "data": {
+                    "ip_addr": "IP-адрес вашего 3D-принтера.",
+                    "serial_number": "Серийный номер",
+                    "check_code": "Проверочный код"
+                }
+            },
+            "reconfigure": {
+                "title": "Перенастроить принтер FlashForge",
+                "description": "Обновите данные подключения вашего принтера.",
+                "data": {
+                    "ip_addr": "IP-адрес вашего 3D-принтера.",
+                    "port": "порт",
+                    "serial_number": "Серийный номер",
+                    "check_code": "Проверочный код"
+                }
+            },
+            "auto_confirm": {
+                "title": "Обнаружено устройство Flashforge.",
+                "description": "Принтер {machine_name} найден по адресу {ip_addr}. Добавить этот принтер в Home Assistant?"
+            }
+        }
+    }
+}

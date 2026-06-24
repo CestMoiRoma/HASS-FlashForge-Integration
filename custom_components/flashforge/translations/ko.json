@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Flashforge 3D 프린터: {serial_number}",
+        "abort": {
+            "no_devices_found": "네트워크에서 장치를 찾을 수 없습니다",
+            "already_configured": "이 프린터는 이미 구성되어 있습니다",
+            "reconfigure_successful": "재구성에 성공했습니다",
+            "wrong_printer": "일련번호가 재구성 중인 프린터와 일치하지 않습니다."
+        },
+        "error": {
+            "cannot_connect": "연결할 수 없습니다. IP 주소, 일련번호, 확인 코드를 올바르게 입력했는지 확인하세요."
+        },
+        "step": {
+            "user": {
+                "title": "FlashForge 프린터 추가",
+                "description": "프린터 연결 방법을 선택하세요.",
+                "menu_options": {
+                    "legacy": "구형 프린터 (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "신형 프린터 (Adventurer 5M / 5M Pro, AD5X, Creator 시리즈)"
+                }
+            },
+            "confirm": {
+                "description": "설정을 시작하시겠습니까?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "3D 프린터의 IP 주소.",
+                    "port": "포트"
+                },
+                "description": "Flashforge 3D 프린터의 IP 주소와 포트 번호를 입력하세요. 비워 두면 프린터를 자동으로 검색합니다."
+            },
+            "new_api": {
+                "title": "신형 FlashForge 프린터 (LAN 모드)",
+                "description": "프린터에서 설정 → 네트워크 → LAN 모드를 활성화하고 8자리 확인 코드와 일련번호를 확인한 후 아래에 입력하세요.",
+                "data": {
+                    "ip_addr": "3D 프린터의 IP 주소.",
+                    "serial_number": "일련번호",
+                    "check_code": "확인 코드"
+                }
+            },
+            "reconfigure": {
+                "title": "FlashForge 프린터 재구성",
+                "description": "프린터의 연결 정보를 업데이트합니다.",
+                "data": {
+                    "ip_addr": "3D 프린터의 IP 주소.",
+                    "port": "포트",
+                    "serial_number": "일련번호",
+                    "check_code": "확인 코드"
+                }
+            },
+            "auto_confirm": {
+                "title": "Flashforge 장치를 발견했습니다.",
+                "description": "{ip_addr}에서 프린터 {machine_name}을(를) 찾았습니다. 이 프린터를 Home Assistant에 추가하시겠습니까?"
+            }
+        }
+    }
+}

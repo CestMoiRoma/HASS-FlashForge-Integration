@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Stampante 3D Flashforge: {serial_number}",
+        "abort": {
+            "no_devices_found": "Nessun dispositivo trovato sulla rete",
+            "already_configured": "Questa stampante è già configurata",
+            "reconfigure_successful": "Riconfigurazione completata con successo",
+            "wrong_printer": "Il numero di serie non corrisponde alla stampante in fase di riconfigurazione."
+        },
+        "error": {
+            "cannot_connect": "Impossibile connettersi. Hai inserito l'indirizzo IP, il numero di serie e il codice di verifica corretti?"
+        },
+        "step": {
+            "user": {
+                "title": "Aggiungi una stampante FlashForge",
+                "description": "Scegli come si connette la tua stampante.",
+                "menu_options": {
+                    "legacy": "Stampante classica (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Stampante recente (Adventurer 5M / 5M Pro, AD5X, serie Creator)"
+                }
+            },
+            "confirm": {
+                "description": "Vuoi avviare la configurazione?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP della tua stampante 3D.",
+                    "port": "porta"
+                },
+                "description": "Inserisci l'IP e il numero di porta della tua stampante 3D Flashforge. Lascia vuoto per rilevare automaticamente la stampante."
+            },
+            "new_api": {
+                "title": "Stampante FlashForge recente (modalità LAN)",
+                "description": "Sulla stampante, attiva Impostazioni → Rete → Modalità LAN e annota il codice di verifica a 8 cifre e il numero di serie, quindi inseriscili qui sotto.",
+                "data": {
+                    "ip_addr": "IP della tua stampante 3D.",
+                    "serial_number": "Numero di serie",
+                    "check_code": "Codice di verifica"
+                }
+            },
+            "reconfigure": {
+                "title": "Riconfigura la stampante FlashForge",
+                "description": "Aggiorna i dettagli di connessione della tua stampante.",
+                "data": {
+                    "ip_addr": "IP della tua stampante 3D.",
+                    "port": "porta",
+                    "serial_number": "Numero di serie",
+                    "check_code": "Codice di verifica"
+                }
+            },
+            "auto_confirm": {
+                "title": "Dispositivo Flashforge rilevato.",
+                "description": "Stampante {machine_name} trovata su {ip_addr}. Vuoi aggiungere questa stampante a Home Assistant?"
+            }
+        }
+    }
+}

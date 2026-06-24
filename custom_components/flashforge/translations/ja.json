@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Flashforge 3D プリンター: {serial_number}",
+        "abort": {
+            "no_devices_found": "ネットワーク上にデバイスが見つかりません",
+            "already_configured": "このプリンターはすでに設定されています",
+            "reconfigure_successful": "再設定に成功しました",
+            "wrong_printer": "シリアル番号が再設定中のプリンターと一致しません。"
+        },
+        "error": {
+            "cannot_connect": "接続できません。IP アドレス、シリアル番号、チェックコードが正しいか確認してください。"
+        },
+        "step": {
+            "user": {
+                "title": "FlashForge プリンターを追加",
+                "description": "プリンターの接続方法を選択してください。",
+                "menu_options": {
+                    "legacy": "旧型プリンター（Adventurer 3/4、Guider、Creator Pro …）",
+                    "new_api": "新型プリンター（Adventurer 5M / 5M Pro、AD5X、Creator シリーズ）"
+                }
+            },
+            "confirm": {
+                "description": "セットアップを開始しますか？"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "3D プリンターの IP アドレス。",
+                    "port": "ポート"
+                },
+                "description": "Flashforge 3D プリンターの IP アドレスとポート番号を入力してください。空欄にするとプリンターを自動検出します。"
+            },
+            "new_api": {
+                "title": "新型 FlashForge プリンター（LAN モード）",
+                "description": "プリンターで 設定 → ネットワーク → LAN モード を有効にし、8 桁のチェックコードとシリアル番号を確認して、以下に入力してください。",
+                "data": {
+                    "ip_addr": "3D プリンターの IP アドレス。",
+                    "serial_number": "シリアル番号",
+                    "check_code": "チェックコード"
+                }
+            },
+            "reconfigure": {
+                "title": "FlashForge プリンターを再設定",
+                "description": "プリンターの接続情報を更新します。",
+                "data": {
+                    "ip_addr": "3D プリンターの IP アドレス。",
+                    "port": "ポート",
+                    "serial_number": "シリアル番号",
+                    "check_code": "チェックコード"
+                }
+            },
+            "auto_confirm": {
+                "title": "Flashforge デバイスを検出しました。",
+                "description": "{ip_addr} でプリンター {machine_name} が見つかりました。このプリンターを Home Assistant に追加しますか？"
+            }
+        }
+    }
+}

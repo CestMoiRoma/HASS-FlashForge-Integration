@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Flashforge 3D-printer: {serial_number}",
+        "abort": {
+            "no_devices_found": "Geen apparaten gevonden op het netwerk",
+            "already_configured": "Deze printer is al geconfigureerd",
+            "reconfigure_successful": "Herconfiguratie geslaagd",
+            "wrong_printer": "Het serienummer komt niet overeen met de printer die opnieuw wordt geconfigureerd."
+        },
+        "error": {
+            "cannot_connect": "Kan geen verbinding maken. Weet u zeker dat u het juiste IP-adres, serienummer en de juiste controlecode hebt ingevoerd?"
+        },
+        "step": {
+            "user": {
+                "title": "Een FlashForge-printer toevoegen",
+                "description": "Kies hoe uw printer verbinding maakt.",
+                "menu_options": {
+                    "legacy": "Oudere printer (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Nieuwere printer (Adventurer 5M / 5M Pro, AD5X, Creator-serie)"
+                }
+            },
+            "confirm": {
+                "description": "Wilt u de installatie starten?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP van uw 3D-printer.",
+                    "port": "poort"
+                },
+                "description": "Voer het IP-adres en poortnummer van uw Flashforge 3D-printer in. Laat leeg om de printer automatisch te detecteren."
+            },
+            "new_api": {
+                "title": "Nieuwere FlashForge-printer (LAN-modus)",
+                "description": "Schakel op de printer Instellingen → Netwerk → LAN-modus in en noteer de 8-cijferige controlecode en het serienummer, en voer ze hieronder in.",
+                "data": {
+                    "ip_addr": "IP van uw 3D-printer.",
+                    "serial_number": "Serienummer",
+                    "check_code": "Controlecode"
+                }
+            },
+            "reconfigure": {
+                "title": "FlashForge-printer opnieuw configureren",
+                "description": "Werk de verbindingsgegevens van uw printer bij.",
+                "data": {
+                    "ip_addr": "IP van uw 3D-printer.",
+                    "port": "poort",
+                    "serial_number": "Serienummer",
+                    "check_code": "Controlecode"
+                }
+            },
+            "auto_confirm": {
+                "title": "Flashforge-apparaat gevonden.",
+                "description": "Printer {machine_name} gevonden op {ip_addr}. Wilt u deze printer aan Home Assistant toevoegen?"
+            }
+        }
+    }
+}

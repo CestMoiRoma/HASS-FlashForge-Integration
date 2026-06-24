@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "3D tiskárna Flashforge: {serial_number}",
+        "abort": {
+            "no_devices_found": "V síti nebyla nalezena žádná zařízení",
+            "already_configured": "Tato tiskárna je již nakonfigurována",
+            "reconfigure_successful": "Změna konfigurace proběhla úspěšně",
+            "wrong_printer": "Sériové číslo neodpovídá tiskárně, která se překonfigurovává."
+        },
+        "error": {
+            "cannot_connect": "Nelze se připojit. Zadali jste správnou IP adresu, sériové číslo a ověřovací kód?"
+        },
+        "step": {
+            "user": {
+                "title": "Přidat tiskárnu FlashForge",
+                "description": "Vyberte, jak se tiskárna připojuje.",
+                "menu_options": {
+                    "legacy": "Starší tiskárna (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Novější tiskárna (Adventurer 5M / 5M Pro, AD5X, řada Creator)"
+                }
+            },
+            "confirm": {
+                "description": "Chcete zahájit nastavení?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP adresa vaší 3D tiskárny.",
+                    "port": "port"
+                },
+                "description": "Zadejte IP adresu a číslo portu vaší 3D tiskárny Flashforge. Ponechte prázdné pro automatické vyhledání tiskárny."
+            },
+            "new_api": {
+                "title": "Novější tiskárna FlashForge (režim LAN)",
+                "description": "Na tiskárně povolte Nastavení → Síť → Režim LAN a poznamenejte si 8místný ověřovací kód a sériové číslo, poté je zadejte níže.",
+                "data": {
+                    "ip_addr": "IP adresa vaší 3D tiskárny.",
+                    "serial_number": "Sériové číslo",
+                    "check_code": "Ověřovací kód"
+                }
+            },
+            "reconfigure": {
+                "title": "Překonfigurovat tiskárnu FlashForge",
+                "description": "Aktualizujte údaje o připojení vaší tiskárny.",
+                "data": {
+                    "ip_addr": "IP adresa vaší 3D tiskárny.",
+                    "port": "port",
+                    "serial_number": "Sériové číslo",
+                    "check_code": "Ověřovací kód"
+                }
+            },
+            "auto_confirm": {
+                "title": "Zařízení Flashforge nalezeno.",
+                "description": "Tiskárna {machine_name} nalezena na {ip_addr}. Chcete přidat tuto tiskárnu do Home Assistant?"
+            }
+        }
+    }
+}

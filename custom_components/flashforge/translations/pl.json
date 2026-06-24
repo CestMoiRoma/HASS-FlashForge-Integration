@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Drukarka 3D Flashforge: {serial_number}",
+        "abort": {
+            "no_devices_found": "Nie znaleziono urządzeń w sieci",
+            "already_configured": "Ta drukarka jest już skonfigurowana",
+            "reconfigure_successful": "Ponowna konfiguracja zakończona powodzeniem",
+            "wrong_printer": "Numer seryjny nie zgadza się z ponownie konfigurowaną drukarką."
+        },
+        "error": {
+            "cannot_connect": "Nie można połączyć. Czy na pewno podano prawidłowy adres IP, numer seryjny i kod weryfikacyjny?"
+        },
+        "step": {
+            "user": {
+                "title": "Dodaj drukarkę FlashForge",
+                "description": "Wybierz sposób połączenia drukarki.",
+                "menu_options": {
+                    "legacy": "Starsza drukarka (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Nowsza drukarka (Adventurer 5M / 5M Pro, AD5X, seria Creator)"
+                }
+            },
+            "confirm": {
+                "description": "Czy chcesz rozpocząć konfigurację?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "Adres IP drukarki 3D.",
+                    "port": "port"
+                },
+                "description": "Wprowadź adres IP i numer portu drukarki 3D Flashforge. Pozostaw puste, aby automatycznie wykryć drukarkę."
+            },
+            "new_api": {
+                "title": "Nowsza drukarka FlashForge (tryb LAN)",
+                "description": "W drukarce włącz Ustawienia → Sieć → Tryb LAN i zanotuj 8-cyfrowy kod weryfikacyjny oraz numer seryjny, a następnie wprowadź je poniżej.",
+                "data": {
+                    "ip_addr": "Adres IP drukarki 3D.",
+                    "serial_number": "Numer seryjny",
+                    "check_code": "Kod weryfikacyjny"
+                }
+            },
+            "reconfigure": {
+                "title": "Ponownie skonfiguruj drukarkę FlashForge",
+                "description": "Zaktualizuj dane połączenia drukarki.",
+                "data": {
+                    "ip_addr": "Adres IP drukarki 3D.",
+                    "port": "port",
+                    "serial_number": "Numer seryjny",
+                    "check_code": "Kod weryfikacyjny"
+                }
+            },
+            "auto_confirm": {
+                "title": "Wykryto urządzenie Flashforge.",
+                "description": "Znaleziono drukarkę {machine_name} pod adresem {ip_addr}. Czy chcesz dodać tę drukarkę do Home Assistant?"
+            }
+        }
+    }
+}

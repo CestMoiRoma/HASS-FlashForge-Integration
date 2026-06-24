@@ -1,0 +1,57 @@
+{
+    "config": {
+        "flow_title": "Flashforge 3D-skrivare: {serial_number}",
+        "abort": {
+            "no_devices_found": "Inga enheter hittades på nätverket",
+            "already_configured": "Den här skrivaren är redan konfigurerad",
+            "reconfigure_successful": "Omkonfigurationen lyckades",
+            "wrong_printer": "Serienumret matchar inte skrivaren som konfigureras om."
+        },
+        "error": {
+            "cannot_connect": "Kan inte ansluta. Är du säker på att du angav rätt IP-adress, serienummer och kontrollkod?"
+        },
+        "step": {
+            "user": {
+                "title": "Lägg till en FlashForge-skrivare",
+                "description": "Välj hur din skrivare ansluter.",
+                "menu_options": {
+                    "legacy": "Äldre skrivare (Adventurer 3/4, Guider, Creator Pro …)",
+                    "new_api": "Nyare skrivare (Adventurer 5M / 5M Pro, AD5X, Creator-serien)"
+                }
+            },
+            "confirm": {
+                "description": "Vill du starta installationen?"
+            },
+            "legacy": {
+                "data": {
+                    "ip_addr": "IP-adress till din 3D-skrivare.",
+                    "port": "port"
+                },
+                "description": "Ange IP-adress och portnummer för din Flashforge 3D-skrivare. Lämna tomt för att hitta skrivaren automatiskt."
+            },
+            "new_api": {
+                "title": "Nyare FlashForge-skrivare (LAN-läge)",
+                "description": "Aktivera Inställningar → Nätverk → LAN-läge på skrivaren och notera den 8-siffriga kontrollkoden och serienumret, och ange dem nedan.",
+                "data": {
+                    "ip_addr": "IP-adress till din 3D-skrivare.",
+                    "serial_number": "Serienummer",
+                    "check_code": "Kontrollkod"
+                }
+            },
+            "reconfigure": {
+                "title": "Konfigurera om FlashForge-skrivaren",
+                "description": "Uppdatera anslutningsuppgifterna för din skrivare.",
+                "data": {
+                    "ip_addr": "IP-adress till din 3D-skrivare.",
+                    "port": "port",
+                    "serial_number": "Serienummer",
+                    "check_code": "Kontrollkod"
+                }
+            },
+            "auto_confirm": {
+                "title": "Flashforge-enhet upptäckt.",
+                "description": "Hittade skrivaren {machine_name} på {ip_addr}. Vill du lägga till den här skrivaren i Home Assistant?"
+            }
+        }
+    }
+}
