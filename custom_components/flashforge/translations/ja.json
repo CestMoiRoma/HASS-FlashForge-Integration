@@ -5,7 +5,8 @@
             "no_devices_found": "ネットワーク上にデバイスが見つかりません",
             "already_configured": "このプリンターはすでに設定されています",
             "reconfigure_successful": "再設定に成功しました",
-            "wrong_printer": "シリアル番号が再設定中のプリンターと一致しません。"
+            "wrong_printer": "シリアル番号が再設定中のプリンターと一致しません。",
+            "reauth_successful": "再認証に成功しました"
         },
         "error": {
             "cannot_connect": "接続できません。IP アドレス、シリアル番号、チェックコードが正しいか確認してください。",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Flashforge デバイスを検出しました。",
                 "description": "{ip_addr} でプリンター {machine_name} が見つかりました。このプリンターを Home Assistant に追加しますか？"
+            },
+            "reauth_confirm": {
+                "title": "FlashForge プリンターを再認証",
+                "description": "プリンターが保存されたチェックコードを拒否しました。プリンターの LAN モード設定に表示されている現在のチェックコードを入力してください。",
+                "data": {
+                    "check_code": "チェックコード"
+                }
             }
         }
     }

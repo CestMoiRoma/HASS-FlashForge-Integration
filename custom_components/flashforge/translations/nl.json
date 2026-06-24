@@ -5,7 +5,8 @@
             "no_devices_found": "Geen apparaten gevonden op het netwerk",
             "already_configured": "Deze printer is al geconfigureerd",
             "reconfigure_successful": "Herconfiguratie geslaagd",
-            "wrong_printer": "Het serienummer komt niet overeen met de printer die opnieuw wordt geconfigureerd."
+            "wrong_printer": "Het serienummer komt niet overeen met de printer die opnieuw wordt geconfigureerd.",
+            "reauth_successful": "Herauthenticatie geslaagd"
         },
         "error": {
             "cannot_connect": "Kan geen verbinding maken. Weet u zeker dat u het juiste IP-adres, serienummer en de juiste controlecode hebt ingevoerd?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Flashforge-apparaat gevonden.",
                 "description": "Printer {machine_name} gevonden op {ip_addr}. Wilt u deze printer aan Home Assistant toevoegen?"
+            },
+            "reauth_confirm": {
+                "title": "FlashForge-printer opnieuw verifiëren",
+                "description": "De printer heeft de opgeslagen controlecode geweigerd. Voer de huidige controlecode in uit de LAN-modusinstellingen van de printer.",
+                "data": {
+                    "check_code": "Controlecode"
+                }
             }
         }
     }

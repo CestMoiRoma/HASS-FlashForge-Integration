@@ -5,7 +5,8 @@
             "no_devices_found": "未在网络中找到设备",
             "already_configured": "此打印机已配置",
             "reconfigure_successful": "重新配置成功",
-            "wrong_printer": "序列号与正在重新配置的打印机不匹配。"
+            "wrong_printer": "序列号与正在重新配置的打印机不匹配。",
+            "reauth_successful": "重新验证成功"
         },
         "error": {
             "cannot_connect": "无法连接。请确认您输入的 IP 地址、序列号和校验码是否正确？",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "已发现 Flashforge 设备。",
                 "description": "在 {ip_addr} 上发现打印机 {machine_name}。是否将此打印机添加到 Home Assistant？"
+            },
+            "reauth_confirm": {
+                "title": "重新验证 FlashForge 打印机",
+                "description": "打印机拒绝了已保存的校验码。请输入打印机局域网模式设置中显示的当前校验码。",
+                "data": {
+                    "check_code": "校验码"
+                }
             }
         }
     }

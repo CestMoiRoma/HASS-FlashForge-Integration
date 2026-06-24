@@ -5,7 +5,8 @@
             "no_devices_found": "Nie znaleziono urządzeń w sieci",
             "already_configured": "Ta drukarka jest już skonfigurowana",
             "reconfigure_successful": "Ponowna konfiguracja zakończona powodzeniem",
-            "wrong_printer": "Numer seryjny nie zgadza się z ponownie konfigurowaną drukarką."
+            "wrong_printer": "Numer seryjny nie zgadza się z ponownie konfigurowaną drukarką.",
+            "reauth_successful": "Ponowne uwierzytelnienie powiodło się"
         },
         "error": {
             "cannot_connect": "Nie można połączyć. Czy na pewno podano prawidłowy adres IP, numer seryjny i kod weryfikacyjny?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Wykryto urządzenie Flashforge.",
                 "description": "Znaleziono drukarkę {machine_name} pod adresem {ip_addr}. Czy chcesz dodać tę drukarkę do Home Assistant?"
+            },
+            "reauth_confirm": {
+                "title": "Ponowne uwierzytelnienie drukarki FlashForge",
+                "description": "Drukarka odrzuciła zapisany kod weryfikacyjny. Wprowadź aktualny kod weryfikacyjny z ustawień trybu LAN drukarki.",
+                "data": {
+                    "check_code": "Kod weryfikacyjny"
+                }
             }
         }
     }

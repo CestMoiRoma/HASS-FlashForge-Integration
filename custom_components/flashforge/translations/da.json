@@ -5,7 +5,8 @@
             "no_devices_found": "Ingen enheder fundet på netværket",
             "already_configured": "Denne printer er allerede konfigureret",
             "reconfigure_successful": "Omkonfigurationen lykkedes",
-            "wrong_printer": "Serienummeret matcher ikke den printer, der omkonfigureres."
+            "wrong_printer": "Serienummeret matcher ikke den printer, der omkonfigureres.",
+            "reauth_successful": "Gengodkendelsen lykkedes"
         },
         "error": {
             "cannot_connect": "Kan ikke oprette forbindelse. Er du sikker på, at du indtastede den korrekte IP-adresse, serienummer og kontrolkode?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Flashforge-enhed fundet.",
                 "description": "Fandt printeren {machine_name} på {ip_addr}. Vil du tilføje denne printer til Home Assistant?"
+            },
+            "reauth_confirm": {
+                "title": "Gengodkend FlashForge-printeren",
+                "description": "Printeren afviste den gemte kontrolkode. Indtast den aktuelle kontrolkode fra printerens LAN-tilstandsindstillinger.",
+                "data": {
+                    "check_code": "Kontrolkode"
+                }
             }
         }
     }

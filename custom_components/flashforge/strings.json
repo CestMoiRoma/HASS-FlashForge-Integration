@@ -50,6 +50,13 @@
       "auto_confirm": {
         "title": "Discovered Flashforge device.",
         "description": "Found printer {machine_name} on {ip_addr}. Do you want to add this printer to Home Assistant?"
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate FlashForge printer",
+        "description": "The printer rejected the saved Check Code. Enter the current Check Code from the printer's LAN mode settings.",
+        "data": {
+          "check_code": "Check Code"
+        }
       }
     },
     "abort": {
@@ -57,7 +64,8 @@
       "already_configured": "[%key:common::config_flow::abort::already_configured%]",
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]",
-      "wrong_printer": "The serial number does not match the printer being reconfigured."
+      "wrong_printer": "The serial number does not match the printer being reconfigured.",
+      "reauth_successful": "Re-authentication was successful"
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",

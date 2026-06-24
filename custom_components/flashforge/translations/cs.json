@@ -5,7 +5,8 @@
             "no_devices_found": "V síti nebyla nalezena žádná zařízení",
             "already_configured": "Tato tiskárna je již nakonfigurována",
             "reconfigure_successful": "Změna konfigurace proběhla úspěšně",
-            "wrong_printer": "Sériové číslo neodpovídá tiskárně, která se překonfigurovává."
+            "wrong_printer": "Sériové číslo neodpovídá tiskárně, která se překonfigurovává.",
+            "reauth_successful": "Opětovné ověření proběhlo úspěšně"
         },
         "error": {
             "cannot_connect": "Nelze se připojit. Zadali jste správnou IP adresu, sériové číslo a ověřovací kód?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Zařízení Flashforge nalezeno.",
                 "description": "Tiskárna {machine_name} nalezena na {ip_addr}. Chcete přidat tuto tiskárnu do Home Assistant?"
+            },
+            "reauth_confirm": {
+                "title": "Znovu ověřit tiskárnu FlashForge",
+                "description": "Tiskárna odmítla uložený ověřovací kód. Zadejte aktuální ověřovací kód z nastavení režimu LAN tiskárny.",
+                "data": {
+                    "check_code": "Ověřovací kód"
+                }
             }
         }
     }

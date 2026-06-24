@@ -5,7 +5,8 @@
             "no_devices_found": "No se encontraron dispositivos en la red",
             "already_configured": "Esta impresora ya está configurada",
             "reconfigure_successful": "La reconfiguración se realizó correctamente",
-            "wrong_printer": "El número de serie no coincide con la impresora que se está reconfigurando."
+            "wrong_printer": "El número de serie no coincide con la impresora que se está reconfigurando.",
+            "reauth_successful": "La reautenticación se realizó correctamente"
         },
         "error": {
             "cannot_connect": "No se puede conectar. ¿Seguro que introdujo la dirección IP, el número de serie y el código de verificación correctos?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Dispositivo Flashforge detectado.",
                 "description": "Impresora {machine_name} encontrada en {ip_addr}. ¿Desea añadir esta impresora a Home Assistant?"
+            },
+            "reauth_confirm": {
+                "title": "Volver a autenticar la impresora FlashForge",
+                "description": "La impresora rechazó el código de verificación guardado. Introduzca el código de verificación actual de los ajustes del modo LAN de la impresora.",
+                "data": {
+                    "check_code": "Código de verificación"
+                }
             }
         }
     }

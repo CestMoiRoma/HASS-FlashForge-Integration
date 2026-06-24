@@ -5,7 +5,8 @@
             "no_devices_found": "Inga enheter hittades på nätverket",
             "already_configured": "Den här skrivaren är redan konfigurerad",
             "reconfigure_successful": "Omkonfigurationen lyckades",
-            "wrong_printer": "Serienumret matchar inte skrivaren som konfigureras om."
+            "wrong_printer": "Serienumret matchar inte skrivaren som konfigureras om.",
+            "reauth_successful": "Återautentiseringen lyckades"
         },
         "error": {
             "cannot_connect": "Kan inte ansluta. Är du säker på att du angav rätt IP-adress, serienummer och kontrollkod?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Flashforge-enhet upptäckt.",
                 "description": "Hittade skrivaren {machine_name} på {ip_addr}. Vill du lägga till den här skrivaren i Home Assistant?"
+            },
+            "reauth_confirm": {
+                "title": "Autentisera FlashForge-skrivaren igen",
+                "description": "Skrivaren avvisade den sparade kontrollkoden. Ange den aktuella kontrollkoden från skrivarens LAN-lägesinställningar.",
+                "data": {
+                    "check_code": "Kontrollkod"
+                }
             }
         }
     }

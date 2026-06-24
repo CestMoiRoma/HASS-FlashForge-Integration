@@ -6,6 +6,7 @@ from datetime import timedelta
 from ffpp.Printer import ConnectionStatus, Printer
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -18,7 +19,7 @@ from .const import (
     SCAN_INTERVAL,
     STATUS_COMPLETED,
 )
-from .new_api import NewApiPrinter
+from .new_api import NewApiAuthError, NewApiPrinter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,6 +64,10 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await self.printer.update()
                 files = await self.printer.network.sendGetFileNames()
+            except NewApiAuthError as err:
+                # The Check Code was rejected (e.g. regenerated on the printer).
+                # Trigger Home Assistant's re-auth flow instead of retrying.
+                raise ConfigEntryAuthFailed(err) from err
             except (TimeoutError, ConnectionError) as err:
                 last_err = err
                 continue

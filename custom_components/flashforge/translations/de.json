@@ -5,7 +5,8 @@
             "no_devices_found": "Keine Geräte im Netzwerk gefunden",
             "already_configured": "Dieser Drucker ist bereits konfiguriert",
             "reconfigure_successful": "Die Neukonfiguration war erfolgreich",
-            "wrong_printer": "Die Seriennummer stimmt nicht mit dem neu zu konfigurierenden Drucker überein."
+            "wrong_printer": "Die Seriennummer stimmt nicht mit dem neu zu konfigurierenden Drucker überein.",
+            "reauth_successful": "Die erneute Authentifizierung war erfolgreich"
         },
         "error": {
             "cannot_connect": "Verbindung nicht möglich. Haben Sie die richtige IP-Adresse, Seriennummer und den richtigen Prüfcode eingegeben?",
@@ -60,6 +61,13 @@
             "auto_confirm": {
                 "title": "Flashforge-Gerät erkannt.",
                 "description": "Drucker {machine_name} unter {ip_addr} gefunden. Möchten Sie diesen Drucker zu Home Assistant hinzufügen?"
+            },
+            "reauth_confirm": {
+                "title": "FlashForge-Drucker neu authentifizieren",
+                "description": "Der Drucker hat den gespeicherten Prüfcode abgelehnt. Geben Sie den aktuellen Prüfcode aus den LAN-Moduseinstellungen des Druckers ein.",
+                "data": {
+                    "check_code": "Prüfcode"
+                }
             }
         }
     }

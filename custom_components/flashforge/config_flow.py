@@ -192,6 +192,42 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reauth(self, _: dict[str, Any]) -> ConfigFlowResult:
+        """Handle re-authentication when the Check Code is rejected."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for a new Check Code and validate it against the printer."""
+        entry = self._get_reauth_entry()
+        errors = {}
+        if user_input is not None:
+            printer = NewApiPrinter(
+                entry.data[CONF_IP_ADDRESS],
+                entry.data[CONF_SERIAL_NUMBER],
+                user_input[CONF_CHECK_CODE],
+                async_get_clientsession(self.hass),
+            )
+            try:
+                await printer.connect()
+            except NewApiAuthError:
+                errors["base"] = "invalid_auth"
+            except (TimeoutError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={CONF_CHECK_CODE: user_input[CONF_CHECK_CODE]},
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_CHECK_CODE): str}),
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
+
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:

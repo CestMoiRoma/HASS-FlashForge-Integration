@@ -428,6 +428,41 @@ async def test_reconfigure_new_api(
 
 
 @pytest.mark.asyncio
+async def test_reauth_flow(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+    mock_new_api_printer: MagicMock,
+):
+    """Test re-auth lets the user supply a new Check Code."""
+    entry = MockConfigEntry(
+        title="Creator5",
+        domain=DOMAIN,
+        unique_id="SNCR5123",
+        data={
+            CONF_API_TYPE: API_TYPE_NEW,
+            CONF_IP_ADDRESS: "192.168.1.20",
+            CONF_PORT: 8898,
+            CONF_SERIAL_NUMBER: "SNCR5123",
+            CONF_CHECK_CODE: "old12345",
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reauth_flow(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "reauth_confirm"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_CHECK_CODE: "new67890"}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert entry.data[CONF_CHECK_CODE] == "new67890"
+
+
+@pytest.mark.asyncio
 async def test_unload_integration(
     enable_custom_integrations, hass: HomeAssistant, mock_printer_network: MagicMock
 ):

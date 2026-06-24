@@ -13,7 +13,11 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
-from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -25,7 +29,7 @@ from .const import (
     DOMAIN,
 )
 from .data_update_coordinator import FlashForgeDataUpdateCoordinator
-from .new_api import NewApiPrinter
+from .new_api import NewApiAuthError, NewApiPrinter
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -60,6 +64,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     coordinator = FlashForgeDataUpdateCoordinator(hass, printer, entry)
     try:
         await coordinator.async_config_entry_first_refresh()
+    except NewApiAuthError as err:
+        raise ConfigEntryAuthFailed(err) from err
     except (TimeoutError, ConnectionError) as err:
         _LOGGER.debug("Printer not responding: %s", err)
         raise ConfigEntryNotReady(err) from err
