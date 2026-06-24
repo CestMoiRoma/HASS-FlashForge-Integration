@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.components.sensor import (
@@ -12,13 +13,22 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    EntityCategory,
+    UnitOfLength,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DEFAULT_NAME, DOMAIN
+from .new_api import NewApiPrinter
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from datetime import datetime
 
     from ffpp.Printer import Printer
     from ffpp.Printer import temperatures as Tool  # noqa: N812
@@ -31,11 +41,19 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+def _finish_time(printer: Printer) -> datetime | None:
+    """Return the estimated wall-clock finish time of the current job."""
+    seconds = getattr(printer, "estimated_time", None)
+    if not seconds:
+        return None
+    return dt_util.utcnow() + timedelta(seconds=seconds)
+
+
 @dataclass(frozen=True)
 class FlashforgeSensorEntityDescription(SensorEntityDescription):
     """Sensor entity description with added value fnc."""
 
-    value_fnc: Callable[[Printer], str | int | None] | None = None
+    value_fnc: Callable[[Printer], str | int | float | datetime | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +99,90 @@ SENSORS: tuple[FlashforgeSensorEntityDescription, ...] = (
         key="move_mode",
         icon="mdi:move-resize",
         value_fnc=lambda printer: printer.move_mode,
+    ),
+)
+# Sensors only available through the newer HTTP API (port 8898).
+NEW_API_SENSORS: tuple[FlashforgeSensorEntityDescription, ...] = (
+    FlashforgeSensorEntityDescription(
+        key="time_remaining",
+        icon="mdi:timer-sand",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        value_fnc=lambda printer: printer.estimated_time,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="finish_time",
+        icon="mdi:clock-end",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fnc=_finish_time,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="elapsed_time",
+        icon="mdi:timer",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        value_fnc=lambda printer: printer.print_duration,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="chamber_current",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fnc=lambda printer: printer.chamber_temp,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="chamber_target",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fnc=lambda printer: printer.chamber_target,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="speed_adjust",
+        icon="mdi:speedometer",
+        native_unit_of_measurement=PERCENTAGE,
+        value_fnc=lambda printer: printer.print_speed_adjust,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="nozzle_size",
+        icon="mdi:printer-3d-nozzle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.nozzle_size,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="filament_type",
+        icon="mdi:printer-3d-nozzle-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.filament_type,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="error_code",
+        icon="mdi:alert-circle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.error_code,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="free_disk_space",
+        icon="mdi:harddisk",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.free_disk_space,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="total_filament",
+        icon="mdi:gauge",
+        native_unit_of_measurement=UnitOfLength.METERS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.cumulative_filament,
+    ),
+    FlashforgeSensorEntityDescription(
+        key="total_print_time",
+        icon="mdi:clock-outline",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fnc=lambda printer: printer.cumulative_print_time,
     ),
 )
 TEMP_SENSORS: tuple[FlashforgeSensorEntityDescription, ...] = (
@@ -151,6 +253,13 @@ async def async_setup_entry(
             )
         )
 
+    # Extra telemetry is only available through the newer HTTP API.
+    if isinstance(coordinator.printer, NewApiPrinter):
+        entities.extend(
+            FlashForgeSensor(coordinator=coordinator, description=description)
+            for description in NEW_API_SENSORS
+        )
+
     async_add_entities(entities)
 
 
@@ -184,7 +293,7 @@ class FlashForgeSensor(CoordinatorEntity, SensorEntity):
         self.tool_name = tool_name
 
     @property
-    def native_value(self) -> str | int | float | None:
+    def native_value(self) -> str | int | float | datetime | None:
         """Return sensor state."""
         if self.entity_description.value_fnc is None:
             return None

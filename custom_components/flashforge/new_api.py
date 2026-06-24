@@ -257,6 +257,20 @@ class NewApiPrinter:
         self._job_layers: int | None = None
         self._internal_fan = False
         self._external_fan = False
+        # Extra telemetry (quick-win sensors).
+        self._estimated_time: int | None = None
+        self._print_duration: int | None = None
+        self._chamber_temp: float | None = None
+        self._chamber_target: float | None = None
+        self._nozzle_size: str | None = None
+        self._filament_type: str | None = None
+        self._current_print_speed: int | None = None
+        self._print_speed_adjust: int | None = None
+        self._error_code: str | None = None
+        self._free_disk_space: float | None = None
+        self._cumulative_filament: float | None = None
+        self._cumulative_print_time: int | None = None
+        self._door_open = False
         # Capability flags, populated from /product on connect.
         self.filtration_control = False
 
@@ -334,6 +348,86 @@ class NewApiPrinter:
             return FILTRATION_INTERNAL
         return FILTRATION_OFF
 
+    @property
+    def estimated_time(self) -> int | None:
+        """Estimated time remaining for the current job, in seconds."""
+        return self._estimated_time
+
+    @property
+    def print_duration(self) -> int | None:
+        """Elapsed print time of the current job, in seconds."""
+        return self._print_duration
+
+    @property
+    def chamber_temp(self) -> float | None:
+        """Current chamber temperature."""
+        return self._chamber_temp
+
+    @property
+    def chamber_target(self) -> float | None:
+        """Target chamber temperature."""
+        return self._chamber_target
+
+    @property
+    def nozzle_size(self) -> str | None:
+        """Installed nozzle model / size."""
+        return self._nozzle_size
+
+    @property
+    def filament_type(self) -> str | None:
+        """Loaded filament type for the right/primary extruder."""
+        return self._filament_type
+
+    @property
+    def current_print_speed(self) -> int | None:
+        """Current print speed reported by the printer."""
+        return self._current_print_speed
+
+    @property
+    def print_speed_adjust(self) -> int | None:
+        """Print speed override, as a percentage."""
+        return self._print_speed_adjust
+
+    @property
+    def error_code(self) -> str | None:
+        """Last error code reported by the printer, if any."""
+        return self._error_code
+
+    @property
+    def free_disk_space(self) -> float | None:
+        """Remaining storage space on the printer."""
+        return self._free_disk_space
+
+    @property
+    def cumulative_filament(self) -> float | None:
+        """Lifetime filament used, in metres."""
+        return self._cumulative_filament
+
+    @property
+    def cumulative_print_time(self) -> int | None:
+        """Lifetime print time, in minutes."""
+        return self._cumulative_print_time
+
+    @property
+    def door_open(self) -> bool:
+        """Whether the printer door is open."""
+        return self._door_open
+
+    @property
+    def is_printing(self) -> bool:
+        """Whether a print job is currently running."""
+        return (self._status or "").lower() == "printing"
+
+    @property
+    def is_paused(self) -> bool:
+        """Whether the current job is paused."""
+        return (self._status or "").lower() in ("paused", "pausing")
+
+    @property
+    def has_error(self) -> bool:
+        """Whether the printer is reporting an error."""
+        return (self._status or "").lower() == "error" or bool(self._error_code)
+
     async def connect(self) -> bool:
         """Perform an initial fetch and mark the printer connected."""
         await self.update()
@@ -394,6 +488,20 @@ class NewApiPrinter:
         self._print_percent = round(progress * 100) if progress is not None else None
         self._print_layer = detail.get("printLayer")
         self._job_layers = detail.get("targetPrintLayer")
+
+        self._estimated_time = detail.get("estimatedTime")
+        self._print_duration = detail.get("printDuration")
+        self._chamber_temp = detail.get("chamberTemp")
+        self._chamber_target = detail.get("chamberTargetTemp")
+        self._nozzle_size = detail.get("nozzleModel")
+        self._filament_type = detail.get("rightFilamentType")
+        self._current_print_speed = detail.get("currentPrintSpeed")
+        self._print_speed_adjust = detail.get("printSpeedAdjust")
+        self._error_code = detail.get("errorCode") or None
+        self._free_disk_space = detail.get("remainingDiskSpace")
+        self._cumulative_filament = detail.get("cumulativeFilament")
+        self._cumulative_print_time = detail.get("cumulativePrintTime")
+        self._door_open = (detail.get("doorStatus") or "").lower() == "open"
 
         # Rebuild the temperature handlers from the latest reading. Bed and
         # right tool are always present; the left tool only exists on dual /

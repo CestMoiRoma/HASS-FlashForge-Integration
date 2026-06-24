@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 PLATFORMS = [
     Platform.SENSOR,
+    Platform.BINARY_SENSOR,
     Platform.CAMERA,
     Platform.SELECT,
     Platform.BUTTON,
