@@ -48,7 +48,9 @@ jobs:
         id: changelog
         shell: "bash"
         run: |
-          last_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          # Most recent tag by creation date (our release tags point at the
+          # bump commit, which isn't on main, so `git describe` can't see them).
+          last_tag="$(git tag --sort=-creatordate | head -n1)"
           if [ -z "$last_tag" ]; then
             range=""
             echo "No previous tag; using full history."
@@ -69,7 +71,7 @@ jobs:
           yq -i -o json '.version="${{ inputs.version }}"' \
             "${{ github.workspace }}/custom_components/flashforge/manifest.json"
 
-      - name: "Commit and tag"
+      - name: "Commit the bump and push the tag"
         shell: "bash"
         run: |
           git config user.name "github-actions[bot]"
@@ -77,7 +79,9 @@ jobs:
           git add custom_components/flashforge/manifest.json
           git commit -m "Release ${{ inputs.version }}"
           git tag -a "${{ inputs.version }}" -m "Release ${{ inputs.version }}"
-          git push origin HEAD --follow-tags
+          # Push only the tag. Main is protected ("changes must be made through
+          # a pull request"), so the bump lives on the tag, not on main.
+          git push origin "refs/tags/${{ inputs.version }}"
 
       - name: "ZIP the integration directory"
         shell: "bash"
