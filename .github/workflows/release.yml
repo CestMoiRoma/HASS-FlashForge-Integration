@@ -8,8 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "New version, e.g. 0.4.0 (no leading v)"
+        description: "Version for the tag and manifest, e.g. 1.0.0 (digits only, no leading v)"
         required: true
+        type: string
+      title:
+        description: "Release title (optional, free-form), e.g. HASS-FF-V1.0.0-Release"
+        required: false
         type: string
 
 permissions:
@@ -85,6 +89,6 @@ jobs:
         uses: softprops/action-gh-release@v2.2.1
         with:
           tag_name: ${{ inputs.version }}
-          name: ${{ inputs.version }}
+          name: ${{ inputs.title || inputs.version }}
           body: ${{ steps.changelog.outputs.notes }}
           files: ${{ github.workspace }}/custom_components/flashforge/FlashForge.zip
