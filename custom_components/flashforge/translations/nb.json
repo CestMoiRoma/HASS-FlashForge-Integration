@@ -15,8 +15,16 @@
                 "title": "Legg til en FlashForge-skriver",
                 "description": "Velg hvordan skriveren din kobler til.",
                 "menu_options": {
+                    "discover": "Søk etter skrivere på nettverket",
                     "legacy": "Eldre skriver (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Nyere skriver (Adventurer 5M / 5M Pro, AD5X, Creator-serien)"
+                }
+            },
+            "discover": {
+                "title": "Oppdagede skrivere",
+                "description": "Velg skriveren du vil legge til.",
+                "data": {
+                    "device": "Skriver"
                 }
             },
             "confirm": {

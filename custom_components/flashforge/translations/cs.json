@@ -15,8 +15,16 @@
                 "title": "Přidat tiskárnu FlashForge",
                 "description": "Vyberte, jak se tiskárna připojuje.",
                 "menu_options": {
+                    "discover": "Vyhledat tiskárny v síti",
                     "legacy": "Starší tiskárna (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Novější tiskárna (Adventurer 5M / 5M Pro, AD5X, řada Creator)"
+                }
+            },
+            "discover": {
+                "title": "Nalezené tiskárny",
+                "description": "Vyberte tiskárnu, kterou chcete přidat.",
+                "data": {
+                    "device": "Tiskárna"
                 }
             },
             "confirm": {

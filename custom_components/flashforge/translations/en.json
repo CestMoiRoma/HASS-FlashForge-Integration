@@ -15,8 +15,16 @@
                 "title": "Add a FlashForge printer",
                 "description": "Choose how your printer connects.",
                 "menu_options": {
+                    "discover": "Search the network for printers",
                     "legacy": "Legacy printer (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Newer printer (Adventurer 5M / 5M Pro, AD5X, Creator series)"
+                }
+            },
+            "discover": {
+                "title": "Discovered printers",
+                "description": "Select the printer you want to add.",
+                "data": {
+                    "device": "Printer"
                 }
             },
             "confirm": {

@@ -15,8 +15,16 @@
                 "title": "Aggiungi una stampante FlashForge",
                 "description": "Scegli come si connette la tua stampante.",
                 "menu_options": {
+                    "discover": "Cerca stampanti sulla rete",
                     "legacy": "Stampante classica (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Stampante recente (Adventurer 5M / 5M Pro, AD5X, serie Creator)"
+                }
+            },
+            "discover": {
+                "title": "Stampanti rilevate",
+                "description": "Seleziona la stampante da aggiungere.",
+                "data": {
+                    "device": "Stampante"
                 }
             },
             "confirm": {

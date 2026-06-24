@@ -15,8 +15,16 @@
                 "title": "FlashForge 프린터 추가",
                 "description": "프린터 연결 방법을 선택하세요.",
                 "menu_options": {
+                    "discover": "네트워크에서 프린터 검색",
                     "legacy": "구형 프린터 (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "신형 프린터 (Adventurer 5M / 5M Pro, AD5X, Creator 시리즈)"
+                }
+            },
+            "discover": {
+                "title": "발견된 프린터",
+                "description": "추가할 프린터를 선택하세요.",
+                "data": {
+                    "device": "프린터"
                 }
             },
             "confirm": {

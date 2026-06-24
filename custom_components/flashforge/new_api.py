@@ -18,9 +18,13 @@ documentation (https://github.com/Parallel-7/flashforge-api-docs).
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import contextlib
 import logging
 import re
+import socket
+import struct
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
@@ -83,6 +87,102 @@ MODEL_BY_PID = {
     36: "Adventurer 5M Pro",
     38: "AD5X",
 }
+
+
+# Network discovery. Printers answer a "Hello World!" probe with a packet that
+# contains their display name and serial number. The same probe works for both
+# legacy and newer printers (verified against an Adventurer 5M and a Creator 5).
+DISCOVERY_GROUP = "225.0.0.9"
+DISCOVERY_PORT = 19000
+DISCOVERY_PROBE = b"Hello World!"
+DISCOVERY_WINDOW = 3.0
+
+
+def _parse_discovery(data: bytes) -> tuple[str | None, str | None]:
+    """
+    Parse (name, serial) from a discovery response packet.
+
+    The packet is the null-padded display name followed by a small binary
+    header and the serial number as a trailing ASCII string. We keep the
+    printable ASCII tokens: the first is the name, the last is the serial.
+    """
+    printable: list[str] = []
+    for token in data.split(b"\x00"):
+        if not token:
+            continue
+        try:
+            text = token.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if text.isprintable():
+            printable.append(text)
+    if not printable:
+        return None, None
+    name = printable[0].strip() or None
+    serial = printable[-1].strip() if len(printable) > 1 else None
+    return name, serial
+
+
+class _DiscoveryProtocol(asyncio.DatagramProtocol):
+    """Send the discovery probe and collect responses keyed by IP."""
+
+    def __init__(self, interface_ip: str) -> None:
+        """Store the interface to multicast from."""
+        self._interface_ip = interface_ip
+        self.printers: dict[str, dict[str, str | None]] = {}
+
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        """Send the probe over multicast and broadcast once connected."""
+        sock = transport.get_extra_info("socket")
+        with contextlib.suppress(OSError):
+            sock.setsockopt(
+                socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, struct.pack("b", 4)
+            )
+            sock.setsockopt(
+                socket.IPPROTO_IP,
+                socket.IP_MULTICAST_IF,
+                socket.inet_aton(self._interface_ip),
+            )
+        transport.sendto(DISCOVERY_PROBE, (DISCOVERY_GROUP, DISCOVERY_PORT))
+        with contextlib.suppress(OSError):
+            transport.sendto(DISCOVERY_PROBE, ("255.255.255.255", DISCOVERY_PORT))
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        """Record the first response from each printer IP."""
+        ip = addr[0]
+        if ip in self.printers:
+            return
+        name, serial = _parse_discovery(data)
+        self.printers[ip] = {"name": name, "serial": serial}
+
+
+async def discover_printers(
+    loop: asyncio.AbstractEventLoop,
+    interface_ip: str,
+    window: float = DISCOVERY_WINDOW,
+) -> list[dict[str, str | None]]:
+    """
+    Broadcast a probe and return printers found within ``window`` seconds.
+
+    Each entry is ``{"ip": ..., "name": ..., "serial": ...}`` (serial/name may
+    be ``None``). Returns an empty list if the socket can't be opened.
+    """
+    try:
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _DiscoveryProtocol(interface_ip),
+            local_addr=(interface_ip, 0),
+            allow_broadcast=True,
+        )
+    except OSError:
+        return []
+    try:
+        await asyncio.sleep(window)
+    finally:
+        transport.close()
+    return [
+        {"ip": ip, "name": info["name"], "serial": info["serial"]}
+        for ip, info in protocol.printers.items()
+    ]
 
 
 _RE_SERIAL = re.compile(r"SN\s?:\s?(.*?)\r\n", re.IGNORECASE)

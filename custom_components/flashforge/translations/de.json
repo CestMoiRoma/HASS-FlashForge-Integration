@@ -15,8 +15,16 @@
                 "title": "FlashForge-Drucker hinzufügen",
                 "description": "Wählen Sie, wie Ihr Drucker verbunden wird.",
                 "menu_options": {
+                    "discover": "Drucker im Netzwerk suchen",
                     "legacy": "Älterer Drucker (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Neuerer Drucker (Adventurer 5M / 5M Pro, AD5X, Creator-Serie)"
+                }
+            },
+            "discover": {
+                "title": "Gefundene Drucker",
+                "description": "Wählen Sie den hinzuzufügenden Drucker aus.",
+                "data": {
+                    "device": "Drucker"
                 }
             },
             "confirm": {

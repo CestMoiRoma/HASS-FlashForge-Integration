@@ -23,7 +23,7 @@ from .const import (
     LEGACY_PORT,
     NEW_API_PORT,
 )
-from .new_api import NewApiPrinter, fetch_machine_info
+from .new_api import NewApiPrinter, discover_printers, fetch_machine_info
 
 
 class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -36,6 +36,8 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     serial: str
     machine_type: str
     printer: Printer
+    _prefill: dict[str, Any] | None = None
+    _discovered: dict[str, dict[str, str | None]] | None = None
 
     async def async_step_user(
         self, _: dict[str, Any] | None = None
@@ -43,8 +45,37 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Let the user choose which kind of printer to add."""
         return self.async_show_menu(
             step_id="user",
-            menu_options=["legacy", "new_api"],
+            menu_options=["discover", "legacy", "new_api"],
         )
+
+    async def async_step_discover(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Scan the network for printers and let the user pick one."""
+        if user_input is None:
+            local_ip = await async_get_source_ip(self.hass)
+            printers = await discover_printers(self.hass.loop, local_ip)
+            self._discovered = {p["ip"]: p for p in printers if p["ip"]}
+            if not self._discovered:
+                return self.async_abort(reason="no_devices_found")
+            options = {
+                ip: f"{info['name'] or 'FlashForge'} ({ip})"
+                for ip, info in self._discovered.items()
+            }
+            return self.async_show_form(
+                step_id="discover",
+                data_schema=vol.Schema({vol.Required("device"): vol.In(options)}),
+            )
+
+        ip_addr = user_input["device"]
+        info = (self._discovered or {}).get(ip_addr, {})
+        # The discovery packet already carries the serial number, so the new-API
+        # step only needs the Check Code from the user.
+        self._prefill = {
+            CONF_IP_ADDRESS: ip_addr,
+            CONF_SERIAL_NUMBER: info.get("serial"),
+        }
+        return await self.async_step_new_api()
 
     async def async_step_legacy(
         self, user_input: dict[str, Any] | None = None
@@ -119,13 +150,12 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         },
                     )
 
-        # Pre-fill the IP by trying to discover a printer on the network. This
-        # is best-effort: if nothing answers the user just types the address.
+        # Pre-fill from a printer chosen in the discovery step (if any). The
+        # serial comes straight from the discovery packet, so only the Check
+        # Code is left to type.
         suggested = dict(user_input or {})
-        if not suggested.get(CONF_IP_ADDRESS):
-            discovered_ip = await self._discover_new_ip()
-            if discovered_ip:
-                suggested[CONF_IP_ADDRESS] = discovered_ip
+        if not user_input and self._prefill:
+            suggested.update({k: v for k, v in self._prefill.items() if v})
 
         data_schema = vol.Schema(
             {
@@ -148,19 +178,6 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             errors=errors,
         )
-
-    async def _discover_new_ip(self) -> str | None:
-        """Best-effort discovery of a printer's IP for the new-API form."""
-        try:
-            local_ip = await async_get_source_ip(self.hass)
-            printers = await Discovery.getPrinters(
-                self.hass.loop, limit=1, host_ip=local_ip
-            )
-        except Exception:  # noqa: BLE001 - discovery is optional, never fatal
-            return None
-        for _, ip_addr in printers:
-            return ip_addr
-        return None
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None

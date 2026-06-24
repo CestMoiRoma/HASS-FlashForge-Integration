@@ -15,8 +15,16 @@
                 "title": "添加 FlashForge 打印机",
                 "description": "选择打印机的连接方式。",
                 "menu_options": {
+                    "discover": "在网络中搜索打印机",
                     "legacy": "旧款打印机（Adventurer 3/4、Guider、Creator Pro …）",
                     "new_api": "新款打印机（Adventurer 5M / 5M Pro、AD5X、Creator 系列）"
+                }
+            },
+            "discover": {
+                "title": "发现的打印机",
+                "description": "选择要添加的打印机。",
+                "data": {
+                    "device": "打印机"
                 }
             },
             "confirm": {

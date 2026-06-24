@@ -261,6 +261,69 @@ async def test_new_api_flow_auto_serial(
 
 
 @pytest.mark.asyncio
+async def test_discover_flow(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+    mock_new_api_printer: MagicMock,
+):
+    """Test discovering a printer pre-fills the new-API form with its serial."""
+    discovered = [{"ip": "192.168.1.20", "name": "Creator 5", "serial": "SNCR5123"}]
+    with patch(
+        "custom_components.flashforge.config_flow.discover_printers",
+        return_value=discovered,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "discover"}
+        )
+        assert result["step_id"] == "discover"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"device": "192.168.1.20"}
+        )
+
+    # Landed on the new-API form, pre-filled from the discovery packet.
+    assert result["step_id"] == "new_api"
+    schema = result["data_schema"].schema
+    assert get_schema_suggested(schema, CONF_IP_ADDRESS) == "192.168.1.20"
+    assert get_schema_suggested(schema, CONF_SERIAL_NUMBER) == "SNCR5123"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_IP_ADDRESS: "192.168.1.20",
+            CONF_SERIAL_NUMBER: "SNCR5123",
+            CONF_CHECK_CODE: "12345678",
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_API_TYPE] == API_TYPE_NEW
+    assert result["data"][CONF_SERIAL_NUMBER] == "SNCR5123"
+
+
+@pytest.mark.asyncio
+async def test_discover_flow_no_devices(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+):
+    """Test the discover flow aborts cleanly when nothing is found."""
+    with patch(
+        "custom_components.flashforge.config_flow.discover_printers",
+        return_value=[],
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"next_step_id": "discover"}
+        )
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "no_devices_found"
+
+
+@pytest.mark.asyncio
 async def test_new_api_flow_cannot_connect(
     enable_custom_integrations,
     hass: HomeAssistant,

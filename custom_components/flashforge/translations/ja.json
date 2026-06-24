@@ -15,8 +15,16 @@
                 "title": "FlashForge プリンターを追加",
                 "description": "プリンターの接続方法を選択してください。",
                 "menu_options": {
+                    "discover": "ネットワークでプリンターを検索",
                     "legacy": "旧型プリンター（Adventurer 3/4、Guider、Creator Pro …）",
                     "new_api": "新型プリンター（Adventurer 5M / 5M Pro、AD5X、Creator シリーズ）"
+                }
+            },
+            "discover": {
+                "title": "検出されたプリンター",
+                "description": "追加するプリンターを選択してください。",
+                "data": {
+                    "device": "プリンター"
                 }
             },
             "confirm": {

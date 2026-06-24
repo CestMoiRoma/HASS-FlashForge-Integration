@@ -15,8 +15,16 @@
                 "title": "Добавить принтер FlashForge",
                 "description": "Выберите способ подключения принтера.",
                 "menu_options": {
+                    "discover": "Найти принтеры в сети",
                     "legacy": "Старый принтер (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Новый принтер (Adventurer 5M / 5M Pro, AD5X, серия Creator)"
+                }
+            },
+            "discover": {
+                "title": "Обнаруженные принтеры",
+                "description": "Выберите принтер для добавления.",
+                "data": {
+                    "device": "Принтер"
                 }
             },
             "confirm": {

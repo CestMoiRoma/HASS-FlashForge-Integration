@@ -15,8 +15,16 @@
                 "title": "Een FlashForge-printer toevoegen",
                 "description": "Kies hoe uw printer verbinding maakt.",
                 "menu_options": {
+                    "discover": "Zoek printers op het netwerk",
                     "legacy": "Oudere printer (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Nieuwere printer (Adventurer 5M / 5M Pro, AD5X, Creator-serie)"
+                }
+            },
+            "discover": {
+                "title": "Gevonden printers",
+                "description": "Selecteer de printer die u wilt toevoegen.",
+                "data": {
+                    "device": "Printer"
                 }
             },
             "confirm": {

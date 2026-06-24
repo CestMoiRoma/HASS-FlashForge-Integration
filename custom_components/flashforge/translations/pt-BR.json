@@ -15,8 +15,16 @@
                 "title": "Adicionar uma impressora FlashForge",
                 "description": "Escolha como sua impressora se conecta.",
                 "menu_options": {
+                    "discover": "Procurar impressoras na rede",
                     "legacy": "Impressora antiga (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Impressora mais nova (Adventurer 5M / 5M Pro, AD5X, série Creator)"
+                }
+            },
+            "discover": {
+                "title": "Impressoras descobertas",
+                "description": "Selecione a impressora que deseja adicionar.",
+                "data": {
+                    "device": "Impressora"
                 }
             },
             "confirm": {

@@ -15,8 +15,16 @@
                 "title": "Dodaj drukarkę FlashForge",
                 "description": "Wybierz sposób połączenia drukarki.",
                 "menu_options": {
+                    "discover": "Wyszukaj drukarki w sieci",
                     "legacy": "Starsza drukarka (Adventurer 3/4, Guider, Creator Pro …)",
                     "new_api": "Nowsza drukarka (Adventurer 5M / 5M Pro, AD5X, seria Creator)"
+                }
+            },
+            "discover": {
+                "title": "Wykryte drukarki",
+                "description": "Wybierz drukarkę, którą chcesz dodać.",
+                "data": {
+                    "device": "Drukarka"
                 }
             },
             "confirm": {
