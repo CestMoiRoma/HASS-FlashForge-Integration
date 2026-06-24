@@ -177,6 +177,25 @@ async def test_set_fan_preserves_other_settings() -> None:
     assert sent["args"]["zAxisCompensation"] == -0.02  # preserved
 
 
+async def test_set_extruder_temp_with_tool_index() -> None:
+    """A tool index adds a T parameter; without it the active tool is used."""
+    printer = _printer()
+    sent: list[list[str]] = []
+
+    class _FakeTcp:
+        async def sendMessage(self, messages: list[str]) -> bool:  # noqa: N802
+            sent.append(list(messages))
+            return True
+
+    printer._tcp = _FakeTcp()  # noqa: SLF001
+
+    await printer.set_extruder_temp(230, tool=2)
+    assert sent[0] == ["~M601 S1\r\n", "~M104 S230 T2\r\n", "~M602\r\n"]
+
+    await printer.set_extruder_temp(210)
+    assert sent[1] == ["~M601 S1\r\n", "~M104 S210\r\n", "~M602\r\n"]
+
+
 async def test_set_filtration_payload() -> None:
     """Selecting a filtration mode sends the expected control payload."""
     printer = _printer()

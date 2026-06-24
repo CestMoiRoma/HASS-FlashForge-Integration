@@ -676,9 +676,19 @@ class NewApiPrinter:
             ["~M601 S1\r\n", f"{command}\r\n", "~M602\r\n"],
         )
 
-    async def set_extruder_temp(self, temperature: float) -> None:
-        """Set the target extruder temperature (0 turns the heater off)."""
-        await self._send_gcode(f"~M104 S{int(temperature)}")
+    async def set_extruder_temp(
+        self, temperature: float, tool: int | None = None
+    ) -> None:
+        """
+        Set a target extruder temperature (0 turns the heater off).
+
+        ``tool`` selects a toolhead on multi-tool printers (Creator 5);
+        leave it ``None`` to target the active/only extruder.
+        """
+        command = f"~M104 S{int(temperature)}"
+        if tool is not None:
+            command += f" T{tool}"
+        await self._send_gcode(command)
 
     async def set_bed_temp(self, temperature: float) -> None:
         """Set the target bed temperature (0 turns the heater off)."""
