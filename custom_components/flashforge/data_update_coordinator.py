@@ -9,7 +9,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_NAME, DOMAIN, MAX_FAILED_UPDATES, SCAN_INTERVAL
+from .const import (
+    DEFAULT_NAME,
+    DOMAIN,
+    EVENT_PRINT_FINISHED,
+    EVENT_PRINTER_ERROR,
+    MAX_FAILED_UPDATES,
+    SCAN_INTERVAL,
+    STATUS_COMPLETED,
+)
 from .new_api import NewApiPrinter
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,6 +47,8 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
         self.data = {
             "status": None,
         }
+        self._last_status: str | None = None
+        self._last_error = False
 
     async def async_update_data(self) -> dict[str, list[str] | str | None]:
         """
@@ -58,9 +68,32 @@ class FlashForgeDataUpdateCoordinator(DataUpdateCoordinator):
                 continue
 
             files = [f.removeprefix("/data/") for f in files] if files else []
+            self._fire_state_events()
             return {"status": self.printer.machine_status, "files": files}
 
         raise UpdateFailed(last_err)
+
+    def _fire_state_events(self) -> None:
+        """Fire bus events on print-finished and error transitions."""
+        status = self.printer.machine_status
+        if status != self._last_status:
+            if status == STATUS_COMPLETED and self._last_status is not None:
+                self.hass.bus.async_fire(EVENT_PRINT_FINISHED, self._event_data())
+            self._last_status = status
+
+        has_error = bool(getattr(self.printer, "has_error", False))
+        if has_error and not self._last_error:
+            self.hass.bus.async_fire(EVENT_PRINTER_ERROR, self._event_data())
+        self._last_error = has_error
+
+    def _event_data(self) -> dict[str, str | None]:
+        """Build the payload shared by the fired events."""
+        return {
+            "device_id": self.config_entry.unique_id,
+            "name": self.printer.machine_name or self.config_entry.title,
+            "file": self.printer.job_file,
+            "status": self.printer.machine_status,
+        }
 
     async def async_config_entry_first_refresh(self) -> None:
         """Connect to printer and update with machine info."""

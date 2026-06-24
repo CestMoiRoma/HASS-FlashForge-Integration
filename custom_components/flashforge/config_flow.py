@@ -109,17 +109,141 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     },
                 )
 
+        # Pre-fill the IP by trying to discover a printer on the network. This
+        # is best-effort: if nothing answers the user just types the address.
+        suggested = dict(user_input or {})
+        if not suggested.get(CONF_IP_ADDRESS):
+            discovered_ip = await self._discover_new_ip()
+            if discovered_ip:
+                suggested[CONF_IP_ADDRESS] = discovered_ip
+
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_IP_ADDRESS): str,
-                vol.Required(CONF_SERIAL_NUMBER): str,
-                vol.Required(CONF_CHECK_CODE): str,
+                vol.Required(
+                    CONF_IP_ADDRESS,
+                    description={"suggested_value": suggested.get(CONF_IP_ADDRESS)},
+                ): str,
+                vol.Required(
+                    CONF_SERIAL_NUMBER,
+                    description={"suggested_value": suggested.get(CONF_SERIAL_NUMBER)},
+                ): str,
+                vol.Required(
+                    CONF_CHECK_CODE,
+                    description={"suggested_value": suggested.get(CONF_CHECK_CODE)},
+                ): str,
             }
         )
         return self.async_show_form(
             step_id="new_api",
             data_schema=data_schema,
             errors=errors,
+        )
+
+    async def _discover_new_ip(self) -> str | None:
+        """Best-effort discovery of a printer's IP for the new-API form."""
+        try:
+            local_ip = await async_get_source_ip(self.hass)
+            printers = await Discovery.getPrinters(
+                self.hass.loop, limit=1, host_ip=local_ip
+            )
+        except Exception:  # noqa: BLE001 - discovery is optional, never fatal
+            return None
+        for _, ip_addr in printers:
+            return ip_addr
+        return None
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Update connection details of an existing printer."""
+        entry = self._get_reconfigure_entry()
+        if entry.data.get(CONF_API_TYPE) == API_TYPE_NEW:
+            return await self._async_reconfigure_new(entry, user_input)
+        return await self._async_reconfigure_legacy(entry, user_input)
+
+    async def _async_reconfigure_new(
+        self, entry: config_entries.ConfigEntry, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Reconfigure a new-API printer (IP / serial / Check Code)."""
+        errors = {}
+        if user_input is not None:
+            printer = NewApiPrinter(
+                user_input[CONF_IP_ADDRESS],
+                user_input[CONF_SERIAL_NUMBER],
+                user_input[CONF_CHECK_CODE],
+                async_get_clientsession(self.hass),
+            )
+            try:
+                await printer.connect()
+            except (TimeoutError, ConnectionError):
+                errors["base"] = "cannot_connect"
+            else:
+                await self.async_set_unique_id(user_input[CONF_SERIAL_NUMBER])
+                self._abort_if_unique_id_mismatch(reason="wrong_printer")
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_IP_ADDRESS: user_input[CONF_IP_ADDRESS],
+                        CONF_SERIAL_NUMBER: user_input[CONF_SERIAL_NUMBER],
+                        CONF_CHECK_CODE: user_input[CONF_CHECK_CODE],
+                    },
+                )
+
+        current = user_input or entry.data
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_IP_ADDRESS,
+                    description={"suggested_value": current.get(CONF_IP_ADDRESS)},
+                ): str,
+                vol.Required(
+                    CONF_SERIAL_NUMBER,
+                    description={"suggested_value": current.get(CONF_SERIAL_NUMBER)},
+                ): str,
+                vol.Required(
+                    CONF_CHECK_CODE,
+                    description={"suggested_value": current.get(CONF_CHECK_CODE)},
+                ): str,
+            }
+        )
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=data_schema, errors=errors
+        )
+
+    async def _async_reconfigure_legacy(
+        self, entry: config_entries.ConfigEntry, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        """Reconfigure a legacy printer (IP / port)."""
+        errors = {}
+        if user_input is not None:
+            printer = Printer(user_input[CONF_IP_ADDRESS], user_input[CONF_PORT])
+            try:
+                await printer.connect()
+            except (TimeoutError, ConnectionError):
+                errors[CONF_IP_ADDRESS] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_IP_ADDRESS: user_input[CONF_IP_ADDRESS],
+                        CONF_PORT: user_input[CONF_PORT],
+                    },
+                )
+
+        current = user_input or entry.data
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_IP_ADDRESS,
+                    description={"suggested_value": current.get(CONF_IP_ADDRESS)},
+                ): str,
+                vol.Required(
+                    CONF_PORT, default=current.get(CONF_PORT, LEGACY_PORT)
+                ): cv.port,
+            }
+        )
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=data_schema, errors=errors
         )
 
     async def async_step_auto(self) -> ConfigFlowResult:

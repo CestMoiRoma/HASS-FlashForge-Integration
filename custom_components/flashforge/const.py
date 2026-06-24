@@ -16,3 +16,10 @@ NEW_API_PORT = 8898
 
 SCAN_INTERVAL = 30
 MAX_FAILED_UPDATES = 3
+
+# Events fired on the Home Assistant bus when the printer changes state.
+EVENT_PRINT_FINISHED = "flashforge_print_finished"
+EVENT_PRINTER_ERROR = "flashforge_error"
+
+# Machine status that indicates a completed job (legacy and mapped new-API).
+STATUS_COMPLETED = "BUILDING_COMPLETED"

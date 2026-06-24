@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flashforge.const import (
     API_TYPE_NEW,
@@ -256,6 +257,49 @@ async def test_new_api_flow_cannot_connect(
 
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+@pytest.mark.asyncio
+async def test_reconfigure_new_api(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+    mock_new_api_printer: MagicMock,
+):
+    """Test reconfiguring a new-API printer updates its connection details."""
+    entry = MockConfigEntry(
+        title="Creator5",
+        domain=DOMAIN,
+        unique_id="SNCR5123",
+        data={
+            CONF_API_TYPE: API_TYPE_NEW,
+            CONF_IP_ADDRESS: "192.168.1.20",
+            CONF_PORT: 8898,
+            CONF_SERIAL_NUMBER: "SNCR5123",
+            CONF_CHECK_CODE: "old12345",
+        },
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "reconfigure"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_IP_ADDRESS: "192.168.1.50",
+            CONF_SERIAL_NUMBER: "SNCR5123",
+            CONF_CHECK_CODE: "new67890",
+        },
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_IP_ADDRESS] == "192.168.1.50"
+    assert entry.data[CONF_CHECK_CODE] == "new67890"
 
 
 @pytest.mark.asyncio

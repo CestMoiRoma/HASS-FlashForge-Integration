@@ -266,6 +266,7 @@ async def async_setup_entry(
 class FlashForgeSensor(CoordinatorEntity, SensorEntity):
     """Representation of an FlashForge sensor."""
 
+    _attr_has_entity_name = True
     coordinator: FlashForgeDataUpdateCoordinator
     entity_description: FlashforgeSensorEntityDescription
 
@@ -281,13 +282,12 @@ class FlashForgeSensor(CoordinatorEntity, SensorEntity):
         self._device_id = coordinator.config_entry.unique_id
         self._attr_device_info = coordinator.device_info
         self.entity_description = description
-        # Fall back to a sensible prefix so entity ids never become "none_..."
-        # when the printer reports no name/serial (see issue #108).
-        title = coordinator.config_entry.title or DEFAULT_NAME
+        # The device supplies the printer name; the entity name is just the
+        # metric. Fall back to DEFAULT_NAME for the unique-id prefix so ids
+        # never become "none_..." when no serial is reported (see issue #108).
         unique_prefix = coordinator.config_entry.unique_id or DEFAULT_NAME
-        self._attr_name = (
-            f"{title} {name.title()}{description.key.replace('_', ' ').title()}"
-        )
+        raw_name = f"{name} {description.key}".replace("_", " ")
+        self._attr_name = " ".join(raw_name.split()).title()
         self._attr_unique_id = f"{unique_prefix}_{name}{description.key}"
 
         self.tool_name = tool_name

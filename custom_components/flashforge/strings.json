@@ -29,6 +29,16 @@
           "check_code": "Check Code"
         }
       },
+      "reconfigure": {
+        "title": "Reconfigure FlashForge printer",
+        "description": "Update the connection details for your printer.",
+        "data": {
+          "ip_addr": "[%key:common::config_flow::data::ip%]",
+          "port": "[%key:common::config_flow::data::port%]",
+          "serial_number": "Serial number",
+          "check_code": "Check Code"
+        }
+      },
       "auto_confirm": {
         "title": "Discovered Flashforge device.",
         "description": "Found printer {machine_name} on {ip_addr}. Do you want to add this printer to Home Assistant?"
@@ -37,7 +47,9 @@
     "abort": {
       "no_devices_found": "[%key:common::config_flow::abort::no_devices_found%]",
       "already_configured": "[%key:common::config_flow::abort::already_configured%]",
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]",
+      "wrong_printer": "The serial number does not match the printer being reconfigured."
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"

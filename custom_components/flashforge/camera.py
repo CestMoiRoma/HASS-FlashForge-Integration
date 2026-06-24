@@ -64,6 +64,8 @@ async def async_setup_entry(
 class FlashForgeCamera(Camera):
     """FlashForge camera object."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self, coordinator: FlashForgeDataUpdateCoordinator, mjpeg_url: str
     ) -> None:

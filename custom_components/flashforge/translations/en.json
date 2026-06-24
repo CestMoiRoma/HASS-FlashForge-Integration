@@ -3,7 +3,9 @@
         "flow_title": "Flashforge 3D Printer: {serial_number}",
         "abort": {
             "no_devices_found": "No devices found on the network",
-            "already_configured": "This printer is already configured"
+            "already_configured": "This printer is already configured",
+            "reconfigure_successful": "Reconfiguration was successful",
+            "wrong_printer": "The serial number does not match the printer being reconfigured."
         },
         "error": {
             "cannot_connect": "Can not connect, are you sure you entered the correct IP, serial number and Check Code?"
@@ -32,6 +34,16 @@
                 "description": "On the printer, enable Settings → Network → LAN Mode and note the 8-digit Check Code and serial number, then enter them below.",
                 "data": {
                     "ip_addr": "Ip of your 3D printer.",
+                    "serial_number": "Serial number",
+                    "check_code": "Check Code"
+                }
+            },
+            "reconfigure": {
+                "title": "Reconfigure FlashForge printer",
+                "description": "Update the connection details for your printer.",
+                "data": {
+                    "ip_addr": "Ip of your 3D printer.",
+                    "port": "port",
                     "serial_number": "Serial number",
                     "check_code": "Check Code"
                 }
