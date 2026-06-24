@@ -10,7 +10,8 @@ _Monitor and control your [FlashForge][flashforge] 3D printer locally from Home 
 
 This integration polls your printer over its **local network** (no cloud
 account required) and exposes its state and controls as Home Assistant
-entities.
+entities. It speaks both the legacy and the newer FlashForge LAN protocols, and
+can **discover printers on your network** during setup.
 
 ---
 
@@ -22,7 +23,7 @@ supports both:
 | Connection | Port | Models (non-exhaustive) | Setup |
 | ---------- | ---- | ----------------------- | ----- |
 | **Legacy** (M-code TCP) | `8899` | Adventurer 3, Adventurer 4, Guider II/III, Creator Pro | IP address only |
-| **New API** (HTTP + Check Code) | `8898` | Adventurer 5M / 5M Pro, AD5X, **Creator 5** and other newer models | LAN mode + serial + Check Code |
+| **New API** (HTTP + Check Code) | `8898` | Adventurer 5M / 5M Pro, AD5X, **Creator 5** and other newer models | LAN mode + Check Code |
 
 > Newer printers no longer expose the open `8899` service. They require **LAN
 > mode** to be turned on and an **8-digit Check Code**. See
@@ -33,17 +34,31 @@ supports both:
 
 | Platform | What you get |
 | -------- | ------------ |
-| `sensor` | Machine status, print status, job %, current/total layers, current file, move mode, and bed + extruder current/target **temperatures**. |
+| `sensor` | Machine status, print status, job %, current/total layers, current file, move mode, bed + extruder current/target **temperatures**, and — on new-API printers — **chamber temperature**, **time remaining**, **estimated finish time**, elapsed time, speed adjust, nozzle size, filament type, error code, free disk space, and lifetime filament/print-time totals. |
+| `binary_sensor` | (new-API) Printing, Paused, Door open, Error. |
 | `camera` | Live MJPEG feed from the printer's camera (if equipped). |
+| `image` | (new-API) Thumbnail of the file currently being printed. |
 | `light`  | Chamber LED on/off. |
-| `select` | Pick a stored file to print. |
-| `button` | Pause, Continue, Abort, and Print-selected-file. |
+| `select` | Pick a stored file to print, and — on new-API printers with the capability — **Filtration** (off / internal / external). |
+| `number` | (new-API) **Nozzle** and **Bed** target temperature. |
+| `button` | Pause, Continue, Abort, Print-selected-file, and — on new-API printers — **Clear platform**. |
+
+Entities marked *(new-API)* are only created for newer printers that expose the
+relevant data/capability.
 
 ### Services
 
 `flashforge.pause`, `flashforge.continue_print`, `flashforge.abort`,
 `flashforge.print_file` (takes `file_name`), and `flashforge.get_file_names`
 (returns the list of files stored on the printer).
+
+### Events
+
+The integration fires these on the Home Assistant event bus, with a
+`{device_id, name, file, status}` payload — handy for notifications:
+
+- `flashforge_print_finished` — a print completed.
+- `flashforge_error` — the printer reported an error.
 
 📖 **Status / Print Status value reference:** see [docs/STATUS.md](docs/STATUS.md).
 
@@ -67,21 +82,32 @@ supports both:
 ## Configuration
 
 All setup is done in the UI: **Settings → Devices & Services → Add Integration
-→ FlashForge**. You'll be asked to pick the printer type.
+→ FlashForge**. You'll be offered three options:
 
-### Adding a legacy printer
+- **Search the network for printers** — scans the LAN, lists the printers it
+  finds, and pre-fills the IP **and serial number** for the one you pick. For a
+  newer printer you then only need to enter the Check Code.
+- **Legacy printer** — enter the IP (port defaults to `8899`), or leave the
+  fields empty to auto-discover.
+- **Newer printer** — enter the details manually (see below).
 
-Choose **Legacy printer**. Either enter the printer's IP address (port defaults
-to `8899`), or leave the fields empty to auto-discover a printer on your
-network.
+The integration is translated into many languages (English, French, German,
+Spanish, Italian, Dutch, Portuguese, Polish, Russian, Chinese, Japanese,
+Korean, Swedish, Norwegian, Danish, Czech).
 
 ### Adding a newer printer (Creator 5 / 5M / AD5X)
 
 1. On the printer's touchscreen, go to **Settings → Network → LAN Mode** and
-   enable it. Note the **Check Code** (8 digits) and the **serial number** shown
-   there.
-2. In Home Assistant, choose **Newer printer** and enter the printer's **IP
-   address**, **serial number**, and **Check Code**.
+   enable it. Note the **Check Code** (8 digits).
+2. In Home Assistant, choose **Search the network** (recommended) and pick your
+   printer, or choose **Newer printer** and enter the **IP address**.
+3. Enter the **Check Code**. The **serial number** is detected automatically
+   (you can also type it if needed).
+
+### Changing the IP or Check Code later
+
+Open the device → **⋮ → Reconfigure** to update the connection details without
+removing and re-adding the printer.
 
 ---
 
