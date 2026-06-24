@@ -4,6 +4,8 @@ This page documents every value the **Status** and **Print Status** sensors can
 report, so you can use them reliably in automations and dashboards.
 (Resolves [#103](https://github.com/joseffallman/hass_flashforge/issues/103).)
 
+See also: [Automation examples](AUTOMATIONS.md).
+
 The values depend on which protocol your printer speaks:
 
 - **Legacy printers** (Adventurer 3 / 4, Guider, Creator Pro …) use the M-code

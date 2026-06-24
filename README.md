@@ -60,7 +60,8 @@ The integration fires these on the Home Assistant event bus, with a
 - `flashforge_print_finished` — a print completed.
 - `flashforge_error` — the printer reported an error.
 
-📖 **Status / Print Status value reference:** see [docs/STATUS.md](docs/STATUS.md).
+📖 **Docs:** [Status / Print Status value reference](docs/STATUS.md) ·
+[Automation examples](docs/AUTOMATIONS.md).
 
 ---
 
