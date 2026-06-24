@@ -23,7 +23,7 @@ from .const import (
     LEGACY_PORT,
     NEW_API_PORT,
 )
-from .new_api import NewApiPrinter
+from .new_api import NewApiPrinter, fetch_machine_info
 
 
 class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -85,29 +85,39 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             ip_addr = user_input[CONF_IP_ADDRESS]
-            serial = user_input[CONF_SERIAL_NUMBER]
             check_code = user_input[CONF_CHECK_CODE]
-            printer = NewApiPrinter(
-                ip_addr, serial, check_code, async_get_clientsession(self.hass)
-            )
-            try:
-                await printer.connect()
-            except (TimeoutError, ConnectionError):
+            # The serial number is optional in the form: if the user leaves it
+            # blank we read it from the printer over the unauthenticated M115
+            # query (port 8899), so only IP + Check Code are really required.
+            serial = user_input.get(CONF_SERIAL_NUMBER)
+            if not serial:
+                info = await fetch_machine_info(ip_addr)
+                serial = info.get("serial")
+
+            if not serial:
                 errors["base"] = "cannot_connect"
             else:
-                await self.async_set_unique_id(serial)
-                self._abort_if_unique_id_configured()
-                title = printer.machine_name or serial
-                return self.async_create_entry(
-                    title=title,
-                    data={
-                        CONF_API_TYPE: API_TYPE_NEW,
-                        CONF_IP_ADDRESS: ip_addr,
-                        CONF_PORT: NEW_API_PORT,
-                        CONF_SERIAL_NUMBER: serial,
-                        CONF_CHECK_CODE: check_code,
-                    },
+                printer = NewApiPrinter(
+                    ip_addr, serial, check_code, async_get_clientsession(self.hass)
                 )
+                try:
+                    await printer.connect()
+                except (TimeoutError, ConnectionError):
+                    errors["base"] = "cannot_connect"
+                else:
+                    await self.async_set_unique_id(serial)
+                    self._abort_if_unique_id_configured()
+                    title = printer.machine_name or serial
+                    return self.async_create_entry(
+                        title=title,
+                        data={
+                            CONF_API_TYPE: API_TYPE_NEW,
+                            CONF_IP_ADDRESS: ip_addr,
+                            CONF_PORT: NEW_API_PORT,
+                            CONF_SERIAL_NUMBER: serial,
+                            CONF_CHECK_CODE: check_code,
+                        },
+                    )
 
         # Pre-fill the IP by trying to discover a printer on the network. This
         # is best-effort: if nothing answers the user just types the address.
@@ -124,12 +134,12 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     description={"suggested_value": suggested.get(CONF_IP_ADDRESS)},
                 ): str,
                 vol.Required(
-                    CONF_SERIAL_NUMBER,
-                    description={"suggested_value": suggested.get(CONF_SERIAL_NUMBER)},
-                ): str,
-                vol.Required(
                     CONF_CHECK_CODE,
                     description={"suggested_value": suggested.get(CONF_CHECK_CODE)},
+                ): str,
+                vol.Optional(
+                    CONF_SERIAL_NUMBER,
+                    description={"suggested_value": suggested.get(CONF_SERIAL_NUMBER)},
                 ): str,
             }
         )

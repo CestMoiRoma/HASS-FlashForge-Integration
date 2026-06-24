@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
@@ -82,6 +83,31 @@ MODEL_BY_PID = {
     36: "Adventurer 5M Pro",
     38: "AD5X",
 }
+
+
+_RE_SERIAL = re.compile(r"SN\s?:\s?(.*?)\r\n", re.IGNORECASE)
+_RE_NAME = re.compile(r"Machine Name\s?:\s?(.*?)\r\n", re.IGNORECASE)
+
+
+async def fetch_machine_info(ip: str) -> dict[str, str | None]:
+    """
+    Read serial/name from the unauthenticated M115 query on port 8899.
+
+    Newer printers keep the M-code service open, so this lets the config flow
+    auto-fill the serial number from just the IP address (no Check Code needed).
+    Returns an empty dict if the printer can't be reached.
+    """
+    network = Network(ip, LEGACY_TCP_PORT)
+    try:
+        response = await network.sendInfoRequest()
+    except (TimeoutError, ConnectionError, OSError):
+        return {}
+    serial = _RE_SERIAL.search(response or "")
+    name = _RE_NAME.search(response or "")
+    return {
+        "serial": serial.group(1) if serial else None,
+        "name": name.group(1) if name else None,
+    }
 
 
 class NewApiError(ConnectionError):

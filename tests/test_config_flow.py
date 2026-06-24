@@ -230,6 +230,37 @@ async def test_new_api_flow(
 
 
 @pytest.mark.asyncio
+async def test_new_api_flow_auto_serial(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+    mock_new_api_printer: MagicMock,
+):
+    """Test the serial number is auto-derived when left blank."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "new_api"}
+    )
+
+    with patch(
+        "custom_components.flashforge.config_flow.fetch_machine_info",
+        return_value={"serial": "SNCR5123", "name": "Creator5"},
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_IP_ADDRESS: "192.168.1.20",
+                CONF_CHECK_CODE: "12345678",
+            },
+        )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_SERIAL_NUMBER] == "SNCR5123"
+    assert result["data"][CONF_CHECK_CODE] == "12345678"
+
+
+@pytest.mark.asyncio
 async def test_new_api_flow_cannot_connect(
     enable_custom_integrations,
     hass: HomeAssistant,
