@@ -8,7 +8,8 @@
             "wrong_printer": "Le numéro de série ne correspond pas à l'imprimante en cours de reconfiguration."
         },
         "error": {
-            "cannot_connect": "Connexion impossible. Avez-vous saisi la bonne adresse IP, le bon numéro de série et le bon code de vérification ?"
+            "cannot_connect": "Connexion impossible. Avez-vous saisi la bonne adresse IP, le bon numéro de série et le bon code de vérification ?",
+            "invalid_auth": "Code de vérification invalide — vérifiez le code affiché dans les paramètres du mode LAN de l'imprimante."
         },
         "step": {
             "user": {

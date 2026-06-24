@@ -8,7 +8,8 @@
             "wrong_printer": "Il numero di serie non corrisponde alla stampante in fase di riconfigurazione."
         },
         "error": {
-            "cannot_connect": "Impossibile connettersi. Hai inserito l'indirizzo IP, il numero di serie e il codice di verifica corretti?"
+            "cannot_connect": "Impossibile connettersi. Hai inserito l'indirizzo IP, il numero di serie e il codice di verifica corretti?",
+            "invalid_auth": "Codice di verifica non valido: controlla il codice mostrato nelle impostazioni della modalità LAN della stampante."
         },
         "step": {
             "user": {

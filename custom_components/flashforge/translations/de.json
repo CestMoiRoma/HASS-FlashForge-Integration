@@ -8,7 +8,8 @@
             "wrong_printer": "Die Seriennummer stimmt nicht mit dem neu zu konfigurierenden Drucker überein."
         },
         "error": {
-            "cannot_connect": "Verbindung nicht möglich. Haben Sie die richtige IP-Adresse, Seriennummer und den richtigen Prüfcode eingegeben?"
+            "cannot_connect": "Verbindung nicht möglich. Haben Sie die richtige IP-Adresse, Seriennummer und den richtigen Prüfcode eingegeben?",
+            "invalid_auth": "Ungültiger Prüfcode – überprüfen Sie den im LAN-Modus des Druckers angezeigten Code."
         },
         "step": {
             "user": {

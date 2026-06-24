@@ -17,6 +17,7 @@ from custom_components.flashforge.const import (
     CONF_SERIAL_NUMBER,
     DOMAIN,
 )
+from custom_components.flashforge.new_api import NewApiAuthError
 
 from . import get_schema_default, get_schema_suggested, init_integration
 
@@ -351,6 +352,36 @@ async def test_new_api_flow_cannot_connect(
 
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+@pytest.mark.asyncio
+async def test_new_api_flow_invalid_check_code(
+    enable_custom_integrations,
+    hass: HomeAssistant,
+):
+    """Test a rejected Check Code shows the dedicated invalid_auth error."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: config_entries.SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "new_api"}
+    )
+
+    with patch(
+        "custom_components.flashforge.config_flow.NewApiPrinter"
+    ) as mock_printer_cls:
+        mock_printer_cls.return_value.connect.side_effect = NewApiAuthError("nope")
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_IP_ADDRESS: "192.168.1.20",
+                CONF_SERIAL_NUMBER: "SNCR5123",
+                CONF_CHECK_CODE: "wrong",
+            },
+        )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
 
 
 @pytest.mark.asyncio

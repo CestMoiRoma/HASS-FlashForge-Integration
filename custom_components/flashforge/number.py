@@ -11,7 +11,7 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -28,9 +28,9 @@ if TYPE_CHECKING:
     from .data_update_coordinator import FlashForgeDataUpdateCoordinator
 
 
-def _tool_target(handler: ToolHandler, name: str) -> float | None:
-    """Return the target temperature of a named tool, if present."""
-    tool = handler.get(name)
+def _first_tool_target(handler: ToolHandler) -> float | None:
+    """Return the target temperature of the first tool in a handler, if any."""
+    tool = handler.get()
     return tool.target if tool is not None else None
 
 
@@ -40,6 +40,7 @@ class FlashforgeNumberEntityDescription(NumberEntityDescription):
 
     value_fnc: Callable[[NewApiPrinter], float | None] | None = None
     set_fnc: Callable[[NewApiPrinter, float], Awaitable[None]] | None = None
+    requires_printing: bool = False
 
 
 NUMBERS: tuple[FlashforgeNumberEntityDescription, ...] = (
@@ -52,7 +53,7 @@ NUMBERS: tuple[FlashforgeNumberEntityDescription, ...] = (
         native_max_value=300,
         native_step=5,
         mode=NumberMode.BOX,
-        value_fnc=lambda printer: _tool_target(printer.extruder_tools, "right"),
+        value_fnc=lambda printer: _first_tool_target(printer.extruder_tools),
         set_fnc=lambda printer, value: printer.set_extruder_temp(value),
     ),
     FlashforgeNumberEntityDescription(
@@ -64,8 +65,32 @@ NUMBERS: tuple[FlashforgeNumberEntityDescription, ...] = (
         native_max_value=120,
         native_step=5,
         mode=NumberMode.BOX,
-        value_fnc=lambda printer: _tool_target(printer.bed_tools, "bed"),
+        value_fnc=lambda printer: _first_tool_target(printer.bed_tools),
         set_fnc=lambda printer, value: printer.set_bed_temp(value),
+    ),
+    FlashforgeNumberEntityDescription(
+        key="cooling_fan",
+        icon="mdi:fan",
+        native_unit_of_measurement=PERCENTAGE,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=5,
+        mode=NumberMode.SLIDER,
+        requires_printing=True,
+        value_fnc=lambda printer: printer.cooling_fan_speed,
+        set_fnc=lambda printer, value: printer.set_cooling_fan(int(value)),
+    ),
+    FlashforgeNumberEntityDescription(
+        key="chamber_fan",
+        icon="mdi:fan",
+        native_unit_of_measurement=PERCENTAGE,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=5,
+        mode=NumberMode.SLIDER,
+        requires_printing=True,
+        value_fnc=lambda printer: printer.chamber_fan_speed,
+        set_fnc=lambda printer, value: printer.set_chamber_fan(int(value)),
     ),
 )
 
@@ -101,6 +126,15 @@ class FlashForgeNumber(CoordinatorEntity, NumberEntity):
         self._attr_unique_id = f"{coordinator.config_entry.unique_id}_{description.key}"
         self._attr_name = description.key.replace("_", " ").title()
         self._attr_device_info = coordinator.device_info
+
+    @property
+    def available(self) -> bool:
+        """Fan controls only work while a print is running."""
+        if not super().available:
+            return False
+        if self.entity_description.requires_printing:
+            return bool(getattr(self.coordinator.printer, "is_printing", False))
+        return True
 
     @property
     def native_value(self) -> float | None:

@@ -117,6 +117,66 @@ async def test_filtration_mode_mapping() -> None:
     assert printer.filtration_mode == "off"
 
 
+async def test_update_tool_changer() -> None:
+    """A multi-tool printer maps every toolhead and drops the chamber sentinel."""
+    printer = _printer()
+
+    async def _fake_detail() -> dict:
+        return {
+            "status": "ready",
+            "model": "Creator 5",
+            "pid": 40,
+            "platTemp": 29,
+            "platTargetTemp": 0,
+            "nozzleTemps": [30, 31, 31, 32],
+            "nozzleTargetTemps": [0, 0, 0, 0],
+            "chamberTemp": -109,
+            "chamberTargetTemp": 0,
+        }
+
+    printer.network.getDetail = _fake_detail
+    await printer.update()
+
+    assert printer.machine_type == "Creator 5"
+    assert len(printer.extruder_tools) == 4
+    assert printer.extruder_tools.get("nozzle3").now == 32
+    assert printer.bed_tools.get("bed").now == 29
+    # -109 is a "no chamber sensor" sentinel and must be ignored.
+    assert printer.chamber_temp is None
+
+
+async def test_set_fan_preserves_other_settings() -> None:
+    """Setting one fan keeps the current speed, Z-offset and the other fan."""
+    printer = _printer()
+
+    async def _fake_detail() -> dict:
+        return {
+            "status": "printing",
+            "coolingFanSpeed": 40,
+            "chamberFanSpeed": 20,
+            "zAxisCompensation": -0.02,
+            "printSpeedAdjust": 100,
+        }
+
+    printer.network.getDetail = _fake_detail
+    await printer.update()
+
+    sent: dict = {}
+
+    async def _capture(cmd: str, args: dict) -> bool:
+        sent.update(cmd=cmd, args=args)
+        return True
+
+    printer.network._send_control = _capture  # noqa: SLF001
+    await printer.set_cooling_fan(80)
+
+    assert sent["cmd"] == "printerCtl_cmd"
+    assert sent["args"]["coolingFan"] == 80
+    assert sent["args"]["chamberFan"] == 20  # preserved
+    assert sent["args"]["speed"] == 100  # preserved
+    assert sent["args"]["zAxisCompensation"] == -0.02  # preserved
+
+
 async def test_set_filtration_payload() -> None:
     """Selecting a filtration mode sends the expected control payload."""
     printer = _printer()

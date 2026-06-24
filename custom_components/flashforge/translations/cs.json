@@ -8,7 +8,8 @@
             "wrong_printer": "Sériové číslo neodpovídá tiskárně, která se překonfigurovává."
         },
         "error": {
-            "cannot_connect": "Nelze se připojit. Zadali jste správnou IP adresu, sériové číslo a ověřovací kód?"
+            "cannot_connect": "Nelze se připojit. Zadali jste správnou IP adresu, sériové číslo a ověřovací kód?",
+            "invalid_auth": "Neplatný ověřovací kód — zkontrolujte kód zobrazený v nastavení režimu LAN tiskárny."
         },
         "step": {
             "user": {

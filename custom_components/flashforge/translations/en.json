@@ -8,7 +8,8 @@
             "wrong_printer": "The serial number does not match the printer being reconfigured."
         },
         "error": {
-            "cannot_connect": "Can not connect, are you sure you entered the correct IP, serial number and Check Code?"
+            "cannot_connect": "Can not connect, are you sure you entered the correct IP, serial number and Check Code?",
+            "invalid_auth": "Invalid Check Code — re-check the code shown in the printer's LAN mode settings."
         },
         "step": {
             "user": {

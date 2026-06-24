@@ -8,7 +8,8 @@
             "wrong_printer": "Serienummeret matcher ikke den printer, der omkonfigureres."
         },
         "error": {
-            "cannot_connect": "Kan ikke oprette forbindelse. Er du sikker på, at du indtastede den korrekte IP-adresse, serienummer og kontrolkode?"
+            "cannot_connect": "Kan ikke oprette forbindelse. Er du sikker på, at du indtastede den korrekte IP-adresse, serienummer og kontrolkode?",
+            "invalid_auth": "Ugyldig kontrolkode – kontroller koden, der vises i printerens LAN-tilstandsindstillinger."
         },
         "step": {
             "user": {

@@ -8,7 +8,8 @@
             "wrong_printer": "Numer seryjny nie zgadza się z ponownie konfigurowaną drukarką."
         },
         "error": {
-            "cannot_connect": "Nie można połączyć. Czy na pewno podano prawidłowy adres IP, numer seryjny i kod weryfikacyjny?"
+            "cannot_connect": "Nie można połączyć. Czy na pewno podano prawidłowy adres IP, numer seryjny i kod weryfikacyjny?",
+            "invalid_auth": "Nieprawidłowy kod weryfikacyjny — sprawdź kod wyświetlany w ustawieniach trybu LAN drukarki."
         },
         "step": {
             "user": {

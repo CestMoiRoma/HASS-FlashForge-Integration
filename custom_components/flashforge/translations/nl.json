@@ -8,7 +8,8 @@
             "wrong_printer": "Het serienummer komt niet overeen met de printer die opnieuw wordt geconfigureerd."
         },
         "error": {
-            "cannot_connect": "Kan geen verbinding maken. Weet u zeker dat u het juiste IP-adres, serienummer en de juiste controlecode hebt ingevoerd?"
+            "cannot_connect": "Kan geen verbinding maken. Weet u zeker dat u het juiste IP-adres, serienummer en de juiste controlecode hebt ingevoerd?",
+            "invalid_auth": "Ongeldige controlecode — controleer de code in de LAN-modusinstellingen van de printer."
         },
         "step": {
             "user": {

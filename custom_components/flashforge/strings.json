@@ -60,7 +60,8 @@
       "wrong_printer": "The serial number does not match the printer being reconfigured."
     },
     "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]"
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "Invalid Check Code — re-check the code shown in the printer's LAN mode settings."
     }
   }
 }

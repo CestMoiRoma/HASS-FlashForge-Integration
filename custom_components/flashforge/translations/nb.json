@@ -8,7 +8,8 @@
             "wrong_printer": "Serienummeret samsvarer ikke med skriveren som konfigureres på nytt."
         },
         "error": {
-            "cannot_connect": "Kan ikke koble til. Er du sikker på at du skrev inn riktig IP-adresse, serienummer og kontrollkode?"
+            "cannot_connect": "Kan ikke koble til. Er du sikker på at du skrev inn riktig IP-adresse, serienummer og kontrollkode?",
+            "invalid_auth": "Ugyldig kontrollkode – kontroller koden som vises i skriverens LAN-modusinnstillinger."
         },
         "step": {
             "user": {

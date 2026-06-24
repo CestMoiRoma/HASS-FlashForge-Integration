@@ -57,6 +57,12 @@ _CMD_JOB_CONTROL = "jobCtl_cmd"
 _CMD_LIGHT_CONTROL = "lightControl_cmd"
 _CMD_CIRCULATE_CONTROL = "circulateCtl_cmd"
 _CMD_STATE_CONTROL = "stateCtrl_cmd"
+_CMD_PRINTER_CONTROL = "printerCtl_cmd"
+
+# A chamber temperature outside this range means the printer has no chamber
+# sensor and is reporting a sentinel (e.g. the Creator 5 reports -109).
+_CHAMBER_TEMP_MIN = -50
+_CHAMBER_TEMP_MAX = 500
 
 # Filtration / exhaust-fan modes exposed to the select entity (see issue #90).
 FILTRATION_OFF = "off"
@@ -210,8 +216,19 @@ async def fetch_machine_info(ip: str) -> dict[str, str | None]:
     }
 
 
+def _valid_temp(value: float | None) -> float | None:
+    """Return a chamber temperature, or ``None`` for a no-sensor sentinel."""
+    if value is None or not _CHAMBER_TEMP_MIN <= value <= _CHAMBER_TEMP_MAX:
+        return None
+    return value
+
+
 class NewApiError(ConnectionError):
     """Raised when the printer answers with a non-OK HTTP status or error code."""
+
+
+class NewApiAuthError(NewApiError):
+    """Raised when the printer rejects the Check Code ("Access code is different")."""
 
 
 class NewApiNetwork:
@@ -263,7 +280,10 @@ class NewApiNetwork:
 
         code = data.get("code")
         if code not in (0, None):
-            msg = f"{endpoint} returned code {code}: {data.get('message')}"
+            message = data.get("message") or ""
+            msg = f"{endpoint} returned code {code}: {message}"
+            if "access code" in message.lower():
+                raise NewApiAuthError(msg)
             raise NewApiError(msg)
         return data
 
@@ -360,6 +380,31 @@ class NewApiNetwork:
             _CMD_STATE_CONTROL, {"action": "setClearPlatform"}
         )
 
+    async def sendPrinterControl(  # noqa: N802 - mirror ffpp API
+        self,
+        *,
+        z_offset: float,
+        speed: int,
+        chamber_fan: int,
+        cooling_fan: int,
+    ) -> bool:
+        """
+        Send a printer-control command (speed / Z-offset / fan speeds).
+
+        All four values are sent together, so callers pass the current values
+        for anything they are not changing. Only effective during a print.
+        """
+        return await self._send_control(
+            _CMD_PRINTER_CONTROL,
+            {
+                "zAxisCompensation": z_offset,
+                "speed": speed,
+                "chamberFan": chamber_fan,
+                "coolingFan": cooling_fan,
+                "coolingLeftFan": 0,
+            },
+        )
+
 
 class NewApiPrinter:
     """
@@ -411,6 +456,9 @@ class NewApiPrinter:
         self._cumulative_filament: float | None = None
         self._cumulative_print_time: int | None = None
         self._door_open = False
+        self._z_axis_compensation: float = 0.0
+        self._cooling_fan_speed: int = 0
+        self._chamber_fan_speed: int = 0
         # Capability flags, populated from /product on connect.
         self.filtration_control = False
 
@@ -529,6 +577,16 @@ class NewApiPrinter:
         return self._print_speed_adjust
 
     @property
+    def cooling_fan_speed(self) -> int:
+        """Cooling (part) fan speed, as a percentage."""
+        return self._cooling_fan_speed
+
+    @property
+    def chamber_fan_speed(self) -> int:
+        """Chamber fan speed, as a percentage."""
+        return self._chamber_fan_speed
+
+    @property
     def error_code(self) -> str | None:
         """Last error code reported by the printer, if any."""
         return self._error_code
@@ -626,6 +684,27 @@ class NewApiPrinter:
         """Set the target bed temperature (0 turns the heater off)."""
         await self._send_gcode(f"~M140 S{int(temperature)}")
 
+    async def set_cooling_fan(self, speed: int) -> None:
+        """Set the cooling (part) fan speed, preserving other print settings."""
+        await self._send_printer_control(cooling_fan=int(speed))
+        self._cooling_fan_speed = int(speed)
+
+    async def set_chamber_fan(self, speed: int) -> None:
+        """Set the chamber fan speed, preserving other print settings."""
+        await self._send_printer_control(chamber_fan=int(speed))
+        self._chamber_fan_speed = int(speed)
+
+    async def _send_printer_control(
+        self, *, cooling_fan: int | None = None, chamber_fan: int | None = None
+    ) -> None:
+        """Send printerCtl_cmd, keeping current speed/Z-offset and the other fan."""
+        await self.network.sendPrinterControl(
+            z_offset=self._z_axis_compensation,
+            speed=self._print_speed_adjust or 100,
+            chamber_fan=self._chamber_fan_speed if chamber_fan is None else chamber_fan,
+            cooling_fan=self._cooling_fan_speed if cooling_fan is None else cooling_fan,
+        )
+
     def _apply_detail(self, detail: dict[str, Any]) -> None:
         """Map a ``/detail`` response onto the ffpp-compatible properties."""
         raw_status = (detail.get("status") or "").lower()
@@ -639,7 +718,12 @@ class NewApiPrinter:
         self._machine_name = detail.get("name")
         self._firmware = detail.get("firmwareVersion")
         self._mac_address = detail.get("macAddr")
-        self._machine_type = MODEL_BY_PID.get(detail.get("pid"), "FlashForge (LAN)")
+        # Newer firmware reports a "model" string directly; fall back to the PID.
+        self._machine_type = (
+            detail.get("model")
+            or MODEL_BY_PID.get(detail.get("pid"))
+            or "FlashForge (LAN)"
+        )
         self._led = (detail.get("lightStatus") or "").lower() == "open"
         self._internal_fan = (detail.get("internalFanStatus") or "").lower() == "open"
         self._external_fan = (detail.get("externalFanStatus") or "").lower() == "open"
@@ -652,8 +736,8 @@ class NewApiPrinter:
 
         self._estimated_time = detail.get("estimatedTime")
         self._print_duration = detail.get("printDuration")
-        self._chamber_temp = detail.get("chamberTemp")
-        self._chamber_target = detail.get("chamberTargetTemp")
+        self._chamber_temp = _valid_temp(detail.get("chamberTemp"))
+        self._chamber_target = _valid_temp(detail.get("chamberTargetTemp"))
         self._nozzle_size = detail.get("nozzleModel")
         self._filament_type = detail.get("rightFilamentType")
         self._current_print_speed = detail.get("currentPrintSpeed")
@@ -663,28 +747,40 @@ class NewApiPrinter:
         self._cumulative_filament = detail.get("cumulativeFilament")
         self._cumulative_print_time = detail.get("cumulativePrintTime")
         self._door_open = (detail.get("doorStatus") or "").lower() == "open"
+        self._z_axis_compensation = detail.get("zAxisCompensation") or 0.0
+        self._cooling_fan_speed = detail.get("coolingFanSpeed") or 0
+        self._chamber_fan_speed = detail.get("chamberFanSpeed") or 0
 
-        # Rebuild the temperature handlers from the latest reading. Bed and
-        # right tool are always present; the left tool only exists on dual /
-        # IDEX machines such as the Creator series.
+        # Rebuild the temperature handlers from the latest reading.
         self.extruder_tools = ToolHandler()
         self.bed_tools = ToolHandler()
         self._add_tool(
             self.bed_tools, "bed", detail.get("platTemp"), detail.get("platTargetTemp")
         )
-        self._add_tool(
-            self.extruder_tools,
-            "right",
-            detail.get("rightTemp"),
-            detail.get("rightTargetTemp"),
-        )
-        if detail.get("leftTemp") is not None:
+
+        nozzle_temps = detail.get("nozzleTemps")
+        if isinstance(nozzle_temps, list) and nozzle_temps:
+            # Tool-changer / multi-tool printers (e.g. the Creator 5) report
+            # each toolhead in parallel arrays.
+            targets = detail.get("nozzleTargetTemps") or []
+            for i, now in enumerate(nozzle_temps):
+                target = targets[i] if i < len(targets) else 0
+                self._add_tool(self.extruder_tools, f"nozzle{i}", now, target)
+        else:
+            # Single / dual-extruder printers (Adventurer 5M, AD5X, …).
             self._add_tool(
                 self.extruder_tools,
-                "left",
-                detail.get("leftTemp"),
-                detail.get("leftTargetTemp"),
+                "right",
+                detail.get("rightTemp"),
+                detail.get("rightTargetTemp"),
             )
+            if detail.get("leftTemp") is not None:
+                self._add_tool(
+                    self.extruder_tools,
+                    "left",
+                    detail.get("leftTemp"),
+                    detail.get("leftTargetTemp"),
+                )
 
     @staticmethod
     def _add_tool(

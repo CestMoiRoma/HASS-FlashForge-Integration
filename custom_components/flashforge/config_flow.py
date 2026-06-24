@@ -23,7 +23,12 @@ from .const import (
     LEGACY_PORT,
     NEW_API_PORT,
 )
-from .new_api import NewApiPrinter, discover_printers, fetch_machine_info
+from .new_api import (
+    NewApiAuthError,
+    NewApiPrinter,
+    discover_printers,
+    fetch_machine_info,
+)
 
 
 class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -55,7 +60,13 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is None:
             local_ip = await async_get_source_ip(self.hass)
             printers = await discover_printers(self.hass.loop, local_ip)
-            self._discovered = {p["ip"]: p for p in printers if p["ip"]}
+            # Hide printers that are already configured (matched by serial).
+            configured = self._async_current_ids()
+            self._discovered = {
+                p["ip"]: p
+                for p in printers
+                if p["ip"] and p.get("serial") not in configured
+            }
             if not self._discovered:
                 return self.async_abort(reason="no_devices_found")
             options = {
@@ -133,6 +144,8 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 try:
                     await printer.connect()
+                except NewApiAuthError:
+                    errors["base"] = "invalid_auth"
                 except (TimeoutError, ConnectionError):
                     errors["base"] = "cannot_connect"
                 else:
@@ -202,6 +215,8 @@ class FlashForgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             try:
                 await printer.connect()
+            except NewApiAuthError:
+                errors["base"] = "invalid_auth"
             except (TimeoutError, ConnectionError):
                 errors["base"] = "cannot_connect"
             else:

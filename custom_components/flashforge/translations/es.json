@@ -8,7 +8,8 @@
             "wrong_printer": "El número de serie no coincide con la impresora que se está reconfigurando."
         },
         "error": {
-            "cannot_connect": "No se puede conectar. ¿Seguro que introdujo la dirección IP, el número de serie y el código de verificación correctos?"
+            "cannot_connect": "No se puede conectar. ¿Seguro que introdujo la dirección IP, el número de serie y el código de verificación correctos?",
+            "invalid_auth": "Código de verificación no válido: compruebe el código que se muestra en los ajustes del modo LAN de la impresora."
         },
         "step": {
             "user": {
